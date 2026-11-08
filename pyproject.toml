@@ -9,6 +9,7 @@ requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.6",
     "pyyaml>=6.0",
+    "mlflow>=3.0",
 ]
 
 [project.optional-dependencies]
@@ -21,6 +22,10 @@ include = ["agent*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+filterwarnings = [
+    # Raised inside MLflow's own SQLAlchemy store, not by this project.
+    "ignore:The ``noload`` loader strategy is deprecated:DeprecationWarning",
+]
 
 [tool.ruff]
 line-length = 100

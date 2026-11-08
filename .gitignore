@@ -6,3 +6,5 @@ __pycache__/
 .ruff_cache/
 mlruns/
 *.egg-info/
+mlflow.db
+.claude/
