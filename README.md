@@ -73,6 +73,35 @@ small margin over the runner-up, or only one comparable run.
 
 These tags are what link an MLflow run back to its DVC dataset version.
 
+### Airflow (`agent/tools/airflow_tools.py`)
+
+| Tool | Purpose | Endpoint (Airflow 3, `/api/v2`) |
+|---|---|---|
+| `airflow_health` | Metadatabase, scheduler, triggerer, DAG processor status | `GET /monitor/health` |
+| `airflow_list_dags` | DAGs with pause state, schedule, tags, import errors | `GET /dags` |
+| `airflow_get_dag_runs` | Recent runs of a DAG, newest first, optional state filter | `GET /dags/{id}/dagRuns` |
+| `airflow_get_dag_run` | One run's status plus the state of every task | `GET .../dagRuns/{run}` + `/taskInstances` |
+| `airflow_get_failed_tasks` | Failed tasks of a run (default: latest failed run) and root-cause tasks | `GET .../taskInstances` |
+| `airflow_get_task_logs` | Log tail and error lines of a task attempt, secrets redacted | `GET .../logs/{try}` |
+| `airflow_trigger_dag` | Trigger an approved DAG (**state-changing**) | `POST /dags/{id}/dagRuns` |
+
+Configuration (environment variables, never committed):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `AIRFLOW_BASE_URL` | `http://localhost:8080` | Airflow API server |
+| `AIRFLOW_USERNAME` / `AIRFLOW_PASSWORD` | unset | Exchanged for a JWT at `POST /auth/token` |
+| `AIRFLOW_TIMEOUT_S` | `10` | Per-request timeout |
+| `AIRFLOW_ALLOWED_TRIGGER_DAGS` | `training_pipeline` | Comma-separated DAGs the agent may trigger |
+
+Permissions: all tools are read-only except `airflow_trigger_dag`, which is rejected unless the
+DAG is on the approved list **and** the call carries `confirm=True`. The token is cached and
+refreshed once on HTTP 401. Credentials and tokens are never logged or returned, and
+`password=`/`token=`-style values in task logs are replaced with `***`.
+
+`airflow_get_failed_tasks` separates tasks that failed themselves (`root_cause_tasks`) from
+tasks that were only `upstream_failed`.
+
 ## Development log
 
 | Step | Change |
@@ -81,3 +110,4 @@ These tags are what link an MLflow run back to its DVC dataset version.
 | 2 | Shared `ToolResult` schema, `@tool` wrapper with structured logging, DVC tools (Task 1) and 17 tests |
 | 3 | Local `.venv` with editable install (`.[dev,dvc]`); ruff lint/format and pytest all passing |
 | 4 | MLflow tools (Task 2) and 23 tests against a real temporary SQLite MLflow store plus mocked server failures (40 tests total) |
+| 5 | Airflow 3 REST API tools (Task 3, agent side) and 21 tests against an in-process fake Airflow API over real HTTP (61 tests total) |
