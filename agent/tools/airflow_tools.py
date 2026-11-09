@@ -301,7 +301,11 @@ def get_task_logs(
     try_number: int | None = None,
     max_lines: int = 200,
 ) -> dict[str, Any]:
-    """Tail of a task attempt's log plus the lines that look like errors (secrets redacted)."""
+    """Tail of a task attempt's log, its error lines and raised exceptions (secrets redacted).
+
+    Airflow 3 returns structured messages ({event, level, error_detail, ...});
+    `exceptions` is taken from `error_detail`, which holds the actual failure reason.
+    """
     client = get_client()
     task = _ident(task_id, "task_id")
     base = f"/dags/{_dag(dag_id)}/dagRuns/{_run(dag_run_id)}/taskInstances/{task}"
@@ -316,16 +320,37 @@ def get_task_logs(
     content = data.get("content", [])
     if isinstance(content, str):
         content = content.splitlines()
-    lines = [
-        _redact((c.get("event", "") if isinstance(c, dict) else str(c))[:1000]) for c in content
-    ]
+    lines, error_lines, exceptions = [], [], []
+    for c in content:
+        msg = c if isinstance(c, dict) else {"event": str(c)}
+        level = str(msg.get("level") or "").lower()
+        line = _redact(f"[{level}] {msg.get('event', '')}" if level else str(msg.get("event", "")))
+        line = line[:1000]
+        lines.append(line)
+        if level in ("error", "critical") or _ERROR_LINE_RE.search(line):
+            error_lines.append(line)
+        for exc in msg.get("error_detail") or []:
+            frames = exc.get("frames") or []
+            last = frames[-1] if frames else {}
+            exceptions.append(
+                {
+                    "type": exc.get("exc_type"),
+                    "message": _redact(str(exc.get("exc_value", "")))[:2000],
+                    "location": (
+                        f"{last.get('filename')}:{last.get('lineno')} in {last.get('name')}"
+                        if last
+                        else None
+                    ),
+                }
+            )
     return {
         "dag_id": dag_id,
         "dag_run_id": dag_run_id,
         "task_id": task_id,
         "try_number": try_number,
         "total_lines": len(lines),
-        "error_lines": [ln for ln in lines if _ERROR_LINE_RE.search(ln)][-50:],
+        "exceptions": exceptions[-10:],
+        "error_lines": error_lines[-50:],
         "tail": lines[-max_lines:],
     }
 

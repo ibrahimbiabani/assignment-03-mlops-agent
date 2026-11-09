@@ -74,12 +74,33 @@ def default_state() -> dict[str, Any]:
             OK_RUN: [_ti("validate_dataset", "success"), _ti("train_model", "success")],
         },
         "logs": {
+            # Same shape as Airflow 3.4 structured task logs.
             (FAILED_RUN, "train_model", 3): [
-                {"event": "Loading features from data/processed/train.csv"},
-                {"event": "Connecting to MLflow with password=hunter2"},
-                {"event": "ERROR - ValueError: Input X contains NaN."},
-                {"event": "Task failed with exception"},
-            ]
+                {"event": "Loading features from data/processed/train.csv", "level": "info"},
+                {"event": "Connecting to MLflow with password=hunter2", "level": "info"},
+                {
+                    "event": "Task failed with exception",
+                    "level": "error",
+                    "error_detail": [
+                        {
+                            "exc_type": "ValueError",
+                            "exc_value": "Input X contains NaN. token=abc123",
+                            "frames": [
+                                {"filename": "task_runner.py", "lineno": 1673, "name": "run"},
+                                {
+                                    "filename": "/opt/airflow/project/training/train.py",
+                                    "lineno": 171,
+                                    "name": "train_model",
+                                },
+                            ],
+                        }
+                    ],
+                },
+            ],
+            (FAILED_RUN, "validate_dataset", 1): [
+                "plain text log line from an older log handler",
+                "ERROR something went wrong",
+            ],
         },
         "valid_tokens": {TOKEN},
         "delay": 0.0,

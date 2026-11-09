@@ -18,7 +18,66 @@ ruff check .
 pytest
 ```
 
-External services are never contacted by the tests; subprocess and API calls are mocked.
+External services are never contacted by the tests: DVC subprocess calls are mocked, MLflow
+uses a temporary SQLite store, and Airflow is an in-process fake API. `tests/test_dag.py` needs
+Airflow, so it is skipped locally and in CI; run it inside the Airflow container:
+
+```bash
+docker compose exec airflow python -m pip install -q pytest
+docker compose exec airflow bash -c "cd /opt/airflow/project && python -m pytest -q -p no:cacheprovider tests/test_dag.py"
+```
+
+## Local stack (MLflow + Airflow)
+
+Requires Docker Desktop.
+
+```bash
+cp .env.example .env              # set AIRFLOW_ADMIN_PASSWORD and AIRFLOW_PASSWORD (same value)
+docker compose up -d --build
+docker compose exec airflow airflow dags unpause training_pipeline
+```
+
+| Service | URL | Notes |
+|---|---|---|
+| MLflow | http://localhost:5000 | SQLite backend and artifacts in the `mlflow-data` volume |
+| Airflow | http://localhost:8080 | `airflow standalone` (Airflow 3.4.0), user `admin`, password from `.env` |
+
+The Airflow image (`docker/airflow/Dockerfile`) adds `mlflow-skinny` under Airflow's official
+constraints. The project is mounted at `/opt/airflow/project` so the DAG can import `training/`,
+read the DVC-tracked data and its Git history, and write per-run files to `artifacts/`.
+
+## Dataset (DVC)
+
+`data/raw/breast_cancer.csv` (Wisconsin breast-cancer data from scikit-learn) is tracked by DVC;
+Git stores only `data/raw/breast_cancer.csv.dvc`. The default remote `localremote` is the folder
+`../dvc-remote` next to the repository.
+
+```bash
+dvc pull                                         # fetch the data for the checked-out version
+python -m training.make_dataset --rows 400       # how version 1 was created
+dvc add data/raw/breast_cancer.csv && dvc push   # after changing the data
+git tag data-v1.0                                # name dataset versions with data-* tags
+```
+
+## Training pipeline (`dags/training_pipeline.py`)
+
+`validate_dataset -> preprocess_data -> train_model -> evaluate_model -> quality_gate -> register_model`
+
+| Task | What it does | Retries |
+|---|---|---|
+| `validate_dataset` | Schema, nulls, both classes, minimum rows, and the file's md5 must match its `.dvc` record | 0 |
+| `preprocess_data` | Drop duplicates, stratified 80/20 split | 2 |
+| `train_model` | scikit-learn pipeline (`logistic_regression` or `random_forest`) | 2 |
+| `evaluate_model` | F1, accuracy, precision, recall, ROC-AUC on the held-out split; logs params, metrics, model and dataset provenance tags to MLflow | 2 |
+| `quality_gate` | Fails unless `f1 >= min_f1` (0.90) and `roc_auc >= min_roc_auc` (0.95); records `quality_gate` on the MLflow run | 0 |
+| `register_model` | Registers the model as `breast-cancer-classifier` and moves the `@candidate` alias to it | 2 |
+
+Validation and the quality gate fail without retrying (bad data or a weak model will not fix
+itself), and every later task is then skipped as `upstream_failed`. `register_model` is the only
+promotion step and re-checks the gate tag before registering. Thresholds and model settings are
+DAG params, e.g. trigger with conf `{"model_type": "random_forest", "min_f1": 0.95}`.
+
+The same stages run without Airflow: `python -m training.train --data data/raw/breast_cancer.csv`.
 
 ## Tools
 
@@ -111,3 +170,5 @@ tasks that were only `upstream_failed`.
 | 3 | Local `.venv` with editable install (`.[dev,dvc]`); ruff lint/format and pytest all passing |
 | 4 | MLflow tools (Task 2) and 23 tests against a real temporary SQLite MLflow store plus mocked server failures (40 tests total) |
 | 5 | Airflow 3 REST API tools (Task 3, agent side) and 21 tests against an in-process fake Airflow API over real HTTP (61 tests total) |
+| 6 | GitHub Actions CI: ruff lint, format check and pytest on Python 3.11 and 3.14 for pushes to `main` and pull requests |
+| 7 | DVC-tracked dataset v1 (400 rows) with local remote; `training/train.py` stages; Airflow 3.4 + MLflow 3.18 Docker stack; `training_pipeline` DAG. Verified live: a run triggered via the agent tool passed all 6 tasks (F1 0.94, model v1 `@candidate`); a run with `min_f1=0.999` failed at `quality_gate`, blocked `register_model`, and was diagnosed by the agent tools from Airflow 3 structured `error_detail` logs |

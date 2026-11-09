@@ -1,0 +1,64 @@
+# Local MLOps stack: MLflow tracking server + Airflow 3 (standalone).
+#   cp .env.example .env   # then set AIRFLOW_ADMIN_PASSWORD
+#   docker compose up -d --build
+# MLflow UI: http://localhost:5000   Airflow UI/API: http://localhost:8080 (user: admin)
+
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v3.18.0
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --artifacts-destination /mlflow/artifacts
+      --allowed-hosts mlflow:5000,localhost:5000,127.0.0.1:5000
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow-data:/mlflow
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  airflow:
+    build:
+      context: .
+      dockerfile: docker/airflow/Dockerfile
+    image: mlops-airflow:3.4.0
+    # Write the admin password (from .env) into the auth manager's passwords file, then start
+    # the API server, scheduler, DAG processor and triggerer in one container.
+    command:
+      - bash
+      - -c
+      - >
+        printf '{"admin": "%s"}' "$$AIRFLOW_ADMIN_PASSWORD" > /opt/airflow/state/passwords.json
+        && exec airflow standalone
+    environment:
+      AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:?Set AIRFLOW_ADMIN_PASSWORD in .env}
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: admin:admin
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: /opt/airflow/state/passwords.json
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/state/airflow.db
+      AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: "30"
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLOPS_PROJECT_DIR: /opt/airflow/project
+      # The project is bind-mounted with a different owner; let git read its history.
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: "*"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - .:/opt/airflow/project
+      - airflow-state:/opt/airflow/state
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mlflow-data:
+  airflow-state:

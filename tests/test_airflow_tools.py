@@ -95,9 +95,23 @@ def test_get_task_logs_uses_latest_try_extracts_errors_and_redacts_secrets(airfl
 
     assert result.ok
     assert result.data["try_number"] == 3
-    assert "ERROR - ValueError: Input X contains NaN." in result.data["error_lines"]
-    assert "hunter2" not in json.dumps(result.data)
+    assert result.data["error_lines"] == ["[error] Task failed with exception"]
+    # The real failure reason comes from Airflow 3's structured error_detail.
+    exc = result.data["exceptions"][0]
+    assert exc["type"] == "ValueError"
+    assert exc["message"].startswith("Input X contains NaN.")
+    assert exc["location"] == "/opt/airflow/project/training/train.py:171 in train_model"
+    dumped = json.dumps(result.data)
+    assert "hunter2" not in dumped and "abc123" not in dumped
     assert "password=***" in " ".join(result.data["tail"])
+
+
+def test_get_task_logs_accepts_plain_string_content(airflow):
+    result = airflow_tools.get_task_logs(
+        "training_pipeline", FAILED_RUN, "validate_dataset", try_number=1
+    )
+    assert result.data["error_lines"] == ["ERROR something went wrong"]
+    assert result.data["exceptions"] == []
 
 
 def test_health(airflow):
