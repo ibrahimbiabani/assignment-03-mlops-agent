@@ -79,6 +79,48 @@ DAG params, e.g. trigger with conf `{"model_type": "random_forest", "min_f1": 0.
 
 The same stages run without Airflow: `python -m training.train --data data/raw/breast_cancer.csv`.
 
+## Prediction API on Kubernetes
+
+`api/main.py` is a FastAPI inference service. At startup it loads
+`breast-cancer-classifier@candidate` from the MLflow registry in the background and retries
+until it succeeds.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /health/live` | Liveness: 200 while the process runs (model loading never causes a restart) |
+| `GET /health/ready` | Readiness: 200 once the model is loaded, otherwise 503 with the last load error |
+| `GET /version` | App version plus the served model name, version, alias and MLflow run |
+| `POST /predict` | `{"instances": [{feature: value, ...}]}` (1-100 rows) -> predictions and probabilities |
+
+Deploy to Docker Desktop's Kubernetes (Settings -> Kubernetes -> Kubeadm). MLflow must be
+running in docker compose; Pods reach it at `host.docker.internal:5000`.
+
+```bash
+docker build -t prediction-api:1.0.0 .
+kubectl config use-context docker-desktop
+kubectl apply -f kubernetes/namespace.yaml
+kubectl apply -f kubernetes/
+kubectl -n mlops-app rollout status deployment/prediction-api
+```
+
+| Manifest | Contents |
+|---|---|
+| `namespace.yaml` | `mlops-app`, the only namespace the agent may touch |
+| `configmap.yaml` | MLflow URI, model name/alias, retry settings (nothing secret) |
+| `deployment.yaml` | 2 replicas, readiness + liveness probes, CPU/memory requests and limits, non-root, read-only root filesystem, rolling updates with `maxUnavailable: 0` |
+| `service.yaml` | ClusterIP Service, port 80 -> container port 8000 |
+| `agent-rbac.yaml` | `mlops-agent` ServiceAccount + Role: read the namespace, patch Deployments (restart) and their scale; nothing else |
+
+Give the agent the restricted identity (the token stays in your kubeconfig, not the repo; re-run
+the first command when it expires):
+
+```bash
+kubectl config set-credentials mlops-agent --token="$(kubectl -n mlops-app create token mlops-agent --duration=168h)"
+kubectl config set-context mlops-agent --cluster=docker-desktop --user=mlops-agent --namespace=mlops-app
+```
+
+Then set `K8S_CONTEXT=mlops-agent` in `.env`.
+
 ## Tools
 
 Every tool returns a `ToolResult` (`agent/schemas.py`) with `status` of `success`, `error`,
@@ -161,6 +203,31 @@ refreshed once on HTTP 401. Credentials and tokens are never logged or returned,
 `airflow_get_failed_tasks` separates tasks that failed themselves (`root_cause_tasks`) from
 tasks that were only `upstream_failed`.
 
+### Kubernetes (`agent/tools/kubernetes_tools.py`)
+
+| Tool | Purpose |
+|---|---|
+| `k8s_list_workloads` | Deployments (desired/ready replicas, image, version, revision) and Pods |
+| `k8s_get_pod_status` | Phase, conditions, container states (e.g. `CrashLoopBackOff`, last `OOMKilled`), probe settings, the Pod's events |
+| `k8s_get_pod_logs` | Log tail of a Pod, or of its previous crashed container; error lines; secrets redacted |
+| `k8s_list_services` | Services with type, ports, selector, and ready/not-ready endpoint counts |
+| `k8s_find_unhealthy` | Unhealthy/restarting Pods with reasons, under-replicated Deployments, newest Warning events |
+| `k8s_get_deployed_version` | Manifest version/image/revision plus what the running app reports at `/version` (via the API server's service proxy) |
+| `k8s_restart_deployment` | Rolling restart (**state-changing**) |
+| `k8s_scale_deployment` | Scale to 1-5 replicas (**state-changing**) |
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `K8S_CONTEXT` | `docker-desktop` | kubeconfig context; use the restricted `mlops-agent` |
+| `K8S_ALLOWED_NAMESPACES` | `mlops-app` | Namespaces the tools may access |
+| `K8S_TIMEOUT_S` | `10` | Per-request timeout |
+
+Permissions are enforced twice. The tools reject any namespace outside the allowed list, and
+both state-changing tools also require `confirm=True`; both checks happen before any API call.
+In the cluster, the `mlops-agent` Role allows only reads in `mlops-app` plus patching
+Deployments and their scale, so it cannot delete, create, read Secrets or reach other
+namespaces even if the code were bypassed.
+
 ## Development log
 
 | Step | Change |
@@ -172,3 +239,4 @@ tasks that were only `upstream_failed`.
 | 5 | Airflow 3 REST API tools (Task 3, agent side) and 21 tests against an in-process fake Airflow API over real HTTP (61 tests total) |
 | 6 | GitHub Actions CI: ruff lint, format check and pytest on Python 3.11 and 3.14 for pushes to `main` and pull requests |
 | 7 | DVC-tracked dataset v1 (400 rows) with local remote; `training/train.py` stages; Airflow 3.4 + MLflow 3.18 Docker stack; `training_pipeline` DAG. Verified live: a run triggered via the agent tool passed all 6 tasks (F1 0.94, model v1 `@candidate`); a run with `min_f1=0.999` failed at `quality_gate`, blocked `register_model`, and was diagnosed by the agent tools from Airflow 3 structured `error_detail` logs |
+| 8 | Task 4: FastAPI prediction service (`api/`), its image, Kubernetes manifests (namespace, ConfigMap, 2-replica Deployment with probes and limits, ClusterIP Service, agent RBAC) and 8 Kubernetes tools with namespace + confirmation guards. Deployed on Docker Desktop Kubernetes 1.36: Pods load model v1 from MLflow; `/version` read through the API proxy; confirmed scale/restart worked; an injected bad image tag (`ErrImagePull`) was diagnosed by the tools via the restricted `mlops-agent` identity while the Service kept serving. 42 new tests (115 total) |

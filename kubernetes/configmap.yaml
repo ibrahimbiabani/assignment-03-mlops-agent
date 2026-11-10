@@ -1,0 +1,19 @@
+# Non-sensitive configuration for the prediction API (no credentials here).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prediction-api-config
+  namespace: mlops-app
+  labels:
+    app.kubernetes.io/name: prediction-api
+    app.kubernetes.io/part-of: mlops-agent
+data:
+  # MLflow runs in docker compose on the host; Docker Desktop exposes the host to Pods
+  # as host.docker.internal (listed in MLflow's --allowed-hosts).
+  MLFLOW_TRACKING_URI: "http://host.docker.internal:5000"
+  MODEL_NAME: "breast-cancer-classifier"
+  MODEL_ALIAS: "candidate"
+  MODEL_LOAD_RETRY_S: "10"
+  MLFLOW_HTTP_REQUEST_MAX_RETRIES: "2"
+  MLFLOW_HTTP_REQUEST_TIMEOUT: "10"
+  LOG_LEVEL: "INFO"

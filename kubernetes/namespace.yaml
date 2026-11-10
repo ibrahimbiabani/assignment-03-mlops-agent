@@ -1,0 +1,7 @@
+# The only namespace the MLOps agent may inspect or modify (K8S_ALLOWED_NAMESPACES).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mlops-app
+  labels:
+    app.kubernetes.io/part-of: mlops-agent

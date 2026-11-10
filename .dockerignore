@@ -1,0 +1,5 @@
+# Build context for the root Dockerfile only needs api/.
+# (docker/airflow/Dockerfile copies nothing from the context.)
+*
+!api/
+api/__pycache__/

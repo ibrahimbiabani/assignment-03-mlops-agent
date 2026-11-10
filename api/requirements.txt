@@ -1,0 +1,10 @@
+# Runtime dependencies of the prediction API image (pinned for reproducible builds).
+# scikit-learn and skops must match the versions used to train and save the model
+# (the MLflow model is serialized with skops under scikit-learn 1.9.1).
+fastapi==0.162.2
+uvicorn==0.54.0
+pandas==3.1.1
+numpy==2.5.4
+scikit-learn==1.9.1
+skops==0.16.0
+mlflow-skinny==3.18.0

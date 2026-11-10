@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prediction-api
+  namespace: mlops-app
+  labels:
+    app.kubernetes.io/name: prediction-api
+    app.kubernetes.io/part-of: mlops-agent
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: prediction-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

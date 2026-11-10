@@ -14,14 +14,19 @@ dependencies = [
     "pandas>=2.0",
     "scikit-learn>=1.4",
     "joblib>=1.3",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    # Client major version tracks the Kubernetes minor version (cluster: 1.36).
+    # 37.x needs python-dateutil>=3, which conflicts with DVC's celery pin.
+    "kubernetes>=36,<37",
 ]
 
 [project.optional-dependencies]
 dvc = ["dvc>=3.50"]
-dev = ["pytest>=8.0", "ruff>=0.5"]
+dev = ["pytest>=8.0", "ruff>=0.5", "httpx2>=2.16"]
 
 [tool.setuptools.packages.find]
-include = ["agent*", "training*"]
+include = ["agent*", "training*", "api*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -41,3 +46,7 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+# The repo's kubernetes/ folder holds manifests; `import kubernetes` is the PyPI client.
+known-third-party = ["kubernetes"]
