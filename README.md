@@ -121,10 +121,64 @@ kubectl config set-context mlops-agent --cluster=docker-desktop --user=mlops-age
 
 Then set `K8S_CONTEXT=mlops-agent` in `.env`.
 
+## Talking to the agent
+
+The agent uses Google Gemini function calling (`GEMINI_API_KEY`, `GEMINI_MODEL` in `.env`). Start
+MLflow/Airflow (`docker compose up -d`) and the Kubernetes deployment first.
+
+```bash
+# One-off question from the terminal (asks before executing any proposed action)
+python -m agent.cli "Is the prediction API healthy, and which model version is it serving?"
+
+# HTTP API
+uvicorn agent.main:app --port 8000
+curl -X POST localhost:8000/chat -H "Content-Type: application/json" \
+     -d '{"message": "Find the best recent model, identify the dataset version used to train it, check the deployment status, and explain whether retraining is necessary."}'
+curl localhost:8000/actions                         # proposals awaiting confirmation
+curl -X POST localhost:8000/actions/<action_id>/confirm
+curl -X POST localhost:8000/actions/<action_id>/reject
+```
+
+Each `/chat` response contains `answer`, the full evidence trail in `tool_calls` (tool,
+arguments, status, duration, data or error), `pending_actions`, `unavailable_sources` and the
+`request_id` (also in the `X-Request-ID` header and every log line).
+
+### How it works (`agent/orchestrator.py`, `agent/llm.py`, `agent/registry.py`)
+
+1. The registry exposes 29 tools. Their input schemas are generated from the Python
+   signatures; `confirm` is never part of a schema.
+2. Gemini chooses tools (automatic function calling is off). Every call goes through the
+   orchestrator: arguments are validated against the schema (unknown tools or arguments are
+   refused), the tool runs, and its `ToolResult` is sent back. Failed tools send only the error,
+   never data.
+3. State-changing tools (`airflow_trigger_dag`, `k8s_restart_deployment`,
+   `k8s_scale_deployment`) are never executed during a chat. The orchestrator dry-runs their
+   guards (approved DAG/namespace, limits); if allowed, it stores a single-use pending action
+   that expires after `AGENT_ACTION_TTL_S` (600 s). Only `POST /actions/{id}/confirm` executes
+   it, with exactly the stored arguments. The LLM cannot confirm anything.
+4. The loop stops after 8 LLM turns or 24 tool calls and then forces a final answer. Large tool
+   outputs are truncated for the LLM but kept in full in `tool_calls`.
+5. Unavailable sources and pending actions are appended to the answer by code, not by the LLM.
+
+Retraining is only ever recommended, never started from a question. `policy_check_retraining`
+compares evidence with the explicit policy in `config/retraining_policy.yaml` (model age <= 30
+days, F1 >= 0.90, ROC-AUC >= 0.95, quality gate passed, trained on the newest data version);
+rules without evidence are reported as `unknown`.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `GEMINI_API_KEY` | - | Gemini API key |
+| `GEMINI_MODEL` | `gemini-3.5-flash` | Model; free tier quotas are per model per day |
+| `GEMINI_THINKING_LEVEL` | `low` | `minimal`, `low`, `medium` or `high` |
+| `AGENT_ACTION_TTL_S` | `600` | Lifetime of a pending action |
+| `AGENT_API_TOKEN` | unset | If set, all endpoints except `/health` need `Authorization: Bearer <token>` |
+| `RETRAINING_POLICY_PATH` | `config/retraining_policy.yaml` | Retraining policy file |
+
 ## Tools
 
 Every tool returns a `ToolResult` (`agent/schemas.py`) with `status` of `success`, `error`,
-`timeout`, `invalid_request` or `rejected`. `data` is only set on success, so the agent cannot
+`timeout`, `invalid_request`, `rejected` or `confirmation_required` (a permitted state change
+that still needs the user's approval). `data` is only set on success, so the agent cannot
 mistake a failure for a result. Each call writes one JSON log line with the tool name, status,
 duration and request id; arguments and outputs are never logged.
 
@@ -240,3 +294,4 @@ namespaces even if the code were bypassed.
 | 6 | GitHub Actions CI: ruff lint, format check and pytest on Python 3.11 and 3.14 for pushes to `main` and pull requests |
 | 7 | DVC-tracked dataset v1 (400 rows) with local remote; `training/train.py` stages; Airflow 3.4 + MLflow 3.18 Docker stack; `training_pipeline` DAG. Verified live: a run triggered via the agent tool passed all 6 tasks (F1 0.94, model v1 `@candidate`); a run with `min_f1=0.999` failed at `quality_gate`, blocked `register_model`, and was diagnosed by the agent tools from Airflow 3 structured `error_detail` logs |
 | 8 | Task 4: FastAPI prediction service (`api/`), its image, Kubernetes manifests (namespace, ConfigMap, 2-replica Deployment with probes and limits, ClusterIP Service, agent RBAC) and 8 Kubernetes tools with namespace + confirmation guards. Deployed on Docker Desktop Kubernetes 1.36: Pods load model v1 from MLflow; `/version` read through the API proxy; confirmed scale/restart worked; an injected bad image tag (`ErrImagePull`) was diagnosed by the tools via the restricted `mlops-agent` identity while the Service kept serving. 42 new tests (115 total) |
+| 9 | Multi-tool agent (Section 5): Gemini function calling (`agent/llm.py`), schema-validated tool registry (29 tools), orchestrator with confirmation-only state changes, retraining policy tools, FastAPI interface with request IDs and optional bearer token, CLI. DVC tools now find `dvc` without an activated venv. Verified live: the mandatory scenario queried MLflow, DVC, Kubernetes and Airflow and applied the policy (retraining not needed, with uncertainty about the `unknown` data.version tag); a requested restart stayed pending until confirmed over HTTP (revision 5 -> 6, second confirm 404); a kube-system restart was rejected; a Gemini 429 quota error produced no invented conclusions. 45 new tests (160 total) |

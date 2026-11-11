@@ -3,6 +3,8 @@
 import json
 import logging
 import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 
@@ -37,6 +39,8 @@ def fake_run(monkeypatch):
     calls: list[list[str]] = []
 
     def run(args, **kwargs):
+        # The tool passes a resolved executable path (e.g. C:\...\dvc.exe); compare by name.
+        args = [Path(args[0]).stem.lower(), *args[1:]]
         calls.append(args)
         for prefix, resp in responses.items():
             if tuple(args[: len(prefix)]) == prefix:
@@ -48,6 +52,20 @@ def fake_run(monkeypatch):
 
     monkeypatch.setattr(dvc_tools.subprocess, "run", run)
     return responses, calls
+
+
+def test_executable_falls_back_to_interpreter_scripts_dir(monkeypatch):
+    """dvc installed in the venv is found even when the venv is not activated (not on PATH)."""
+    scripts = str(Path(sys.executable).parent)
+    lookups = []
+
+    def which(name, path=None):
+        lookups.append(path)
+        return f"{scripts}/{name}" if path == scripts else None
+
+    monkeypatch.setattr(dvc_tools.shutil, "which", which)
+    assert dvc_tools.executable("dvc") == f"{scripts}/dvc"
+    assert lookups == [None, scripts]  # PATH first, then the interpreter's folder
 
 
 def test_list_tracked_datasets_reads_dvc_files(repo):

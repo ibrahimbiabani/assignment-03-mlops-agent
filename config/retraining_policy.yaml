@@ -1,0 +1,12 @@
+# Explicit retraining policy.
+# The agent may RECOMMEND retraining only when recorded evidence violates one of these
+# rules (policy_check_retraining). It never triggers retraining on its own: any
+# training run must be proposed via airflow_trigger_dag and confirmed by the user.
+model_name: breast-cancer-classifier
+serving_alias: candidate
+rules:
+  max_model_age_days: 30            # freshness: the served model was trained > N days ago
+  min_f1: 0.90                      # performance floor on the held-out split
+  min_roc_auc: 0.95
+  require_quality_gate_passed: true # the served model's MLflow run must record quality_gate=passed
+  require_latest_data_version: true # the served model must be trained on the newest dataset version

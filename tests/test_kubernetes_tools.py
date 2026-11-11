@@ -297,9 +297,9 @@ def test_deployed_version_still_succeeds_when_app_unreachable(cluster):
         lambda: kt.restart_deployment("prediction-api", confirm="yes"),
     ],
 )
-def test_modifications_without_confirmation_are_rejected(cluster, call):
+def test_modifications_without_confirmation_are_not_executed(cluster, call):
     result = call()
-    assert result.status == ToolStatus.REJECTED
+    assert result.status == ToolStatus.CONFIRMATION_REQUIRED
     assert "confirmation" in result.error
     assert cluster.calls == []
 

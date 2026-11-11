@@ -24,7 +24,14 @@ from kubernetes import client, config
 from kubernetes.client.exceptions import ApiException
 from kubernetes.config.config_exception import ConfigException
 
-from agent.tools.base import InvalidToolRequest, ToolError, ToolRejected, ToolTimeout, tool
+from agent.tools.base import (
+    ConfirmationRequired,
+    InvalidToolRequest,
+    ToolError,
+    ToolRejected,
+    ToolTimeout,
+    tool,
+)
 
 DEFAULT_NAMESPACE = "mlops-app"
 MAX_REPLICAS = 5
@@ -400,7 +407,7 @@ def get_deployed_version(
 
 def _require_confirmation(confirm: bool, action: str) -> None:
     if confirm is not True:
-        raise ToolRejected(
+        raise ConfirmationRequired(
             f"{action} changes cluster state and requires explicit user confirmation"
         )
 

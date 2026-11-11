@@ -19,6 +19,8 @@ dependencies = [
     # Client major version tracks the Kubernetes minor version (cluster: 1.36).
     # 37.x needs python-dateutil>=3, which conflicts with DVC's celery pin.
     "kubernetes>=36,<37",
+    "google-genai>=3.1",
+    "python-dotenv>=1.0",
 ]
 
 [project.optional-dependencies]
@@ -27,6 +29,9 @@ dev = ["pytest>=8.0", "ruff>=0.5", "httpx2>=2.16"]
 
 [tool.setuptools.packages.find]
 include = ["agent*", "training*", "api*"]
+
+[project.scripts]
+mlops-agent = "agent.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

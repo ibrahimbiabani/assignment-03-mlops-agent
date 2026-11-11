@@ -39,10 +39,19 @@ class ToolRejected(ToolError):
     """The operation is not permitted (allowlist / permission check)."""
 
 
+class ConfirmationRequired(ToolError):
+    """A permitted state-changing operation that needs explicit user confirmation.
+
+    Raised only after every other check (allowlists, limits, argument validation)
+    has passed, so it means "valid, but not yet approved by the user".
+    """
+
+
 _STATUS_FOR = {
     ToolTimeout: ToolStatus.TIMEOUT,
     InvalidToolRequest: ToolStatus.INVALID_REQUEST,
     ToolRejected: ToolStatus.REJECTED,
+    ConfirmationRequired: ToolStatus.CONFIRMATION_REQUIRED,
 }
 
 
@@ -80,6 +89,7 @@ def tool(name: str) -> Callable[[Callable[..., dict[str, Any]]], Callable[..., T
             )
             return result
 
+        wrapper.tool_name = name  # type: ignore[attr-defined]  # read by agent.registry
         return wrapper
 
     return decorator

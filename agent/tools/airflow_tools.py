@@ -18,6 +18,7 @@ from urllib.parse import quote
 import requests
 
 from agent.tools.base import (
+    ConfirmationRequired,
     InvalidToolRequest,
     ToolError,
     ToolRejected,
@@ -363,11 +364,12 @@ def trigger_dag(
     _dag(dag_id)
     if dag_id not in allowed_trigger_dags():
         raise ToolRejected(f"DAG '{dag_id}' is not on the approved trigger list")
-    if confirm is not True:
-        raise ToolRejected(f"triggering '{dag_id}' requires explicit user confirmation")
     conf = conf or {}
     if not isinstance(conf, dict) or len(json.dumps(conf)) > MAX_CONF_BYTES:
         raise InvalidToolRequest(f"conf must be a JSON object under {MAX_CONF_BYTES} bytes")
+    # Last check, so a dry run (confirm=False) validates everything else first.
+    if confirm is not True:
+        raise ConfirmationRequired(f"triggering '{dag_id}' requires explicit user confirmation")
 
     client = get_client()
     dag = client.request("GET", f"/dags/{dag_id}")

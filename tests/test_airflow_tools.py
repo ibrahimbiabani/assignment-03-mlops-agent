@@ -129,7 +129,7 @@ def test_health(airflow):
 def test_trigger_without_confirmation_is_rejected_and_sends_nothing(airflow):
     result = airflow_tools.trigger_dag("training_pipeline")
 
-    assert result.status == ToolStatus.REJECTED
+    assert result.status == ToolStatus.CONFIRMATION_REQUIRED
     assert "confirmation" in result.error
     assert airflow.calls() == []
 

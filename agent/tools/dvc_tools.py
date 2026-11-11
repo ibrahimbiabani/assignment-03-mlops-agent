@@ -7,7 +7,9 @@ and Git history. Only the read-only commands in APPROVED_COMMANDS can run.
 import json
 import os
 import re
+import shutil
 import subprocess
+import sys
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -35,13 +37,22 @@ def repo_root() -> Path:
     return Path(os.environ.get("MLOPS_REPO_PATH", ".")).resolve()
 
 
+def executable(name: str) -> str:
+    """Resolve `dvc`/`git` from PATH, else from the running interpreter's scripts folder.
+
+    The agent often runs as `.venv/Scripts/python` without the venv being activated,
+    in which case the venv's `dvc` is not on PATH.
+    """
+    return shutil.which(name) or shutil.which(name, path=str(Path(sys.executable).parent)) or name
+
+
 def run_command(args: list[str], timeout: float = DEFAULT_TIMEOUT_S) -> str:
     """Run an approved DVC/Git command without a shell and return its stdout."""
     if tuple(args[:2]) not in APPROVED_COMMANDS:
         raise ToolRejected(f"command not approved: {' '.join(args[:2])}")
     try:
         proc = subprocess.run(
-            args,
+            [executable(args[0]), *args[1:]],
             cwd=repo_root(),
             capture_output=True,
             text=True,
