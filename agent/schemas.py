@@ -72,7 +72,10 @@ class AgentResponse(BaseModel):
         description="Tools that failed (error/timeout); their data is NOT in the answer."
     )
     steps: int
-    model: str
+    model: str = Field(description="Model(s) that produced this answer, in order of use")
+    llm_fallbacks: list[str] = Field(
+        default_factory=list, description="Models skipped during this request, with the reason"
+    )
     duration_ms: float
     error: str | None = None
 

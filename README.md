@@ -165,10 +165,53 @@ compares evidence with the explicit policy in `config/retraining_policy.yaml` (m
 days, F1 >= 0.90, ROC-AUC >= 0.95, quality gate passed, trained on the newest data version);
 rules without evidence are reported as `unknown`.
 
+### Running on the Gemini free tier (`agent/gemini_pool.py`)
+
+Free-tier limits are small (e.g. 20 requests/day for `gemini-3.5-flash`), counted per project and
+per model, reset at midnight Pacific, and not published per model. The agent therefore:
+
+- **Falls back along a model chain** (`GEMINI_MODELS`, best first). Each LLM request uses the
+  soonest usable model, preferring chain order. On failure the model is put on cooldown and the
+  same request moves on to the next model; the conversation history is passed on unchanged.
+
+  | Error from Gemini | Cooldown |
+  |---|---|
+  | 429, daily quota (`...PerDay...` quota id) | the `retryDelay` Gemini returns, else until midnight Pacific |
+  | 429, model has no free-tier quota | 24 h |
+  | 429, per-minute limit | `retryDelay`, else 60 s |
+  | 404 / 403 (retired or not served) | 24 h |
+  | 500 / 503 / 504, timeout, network error | 60 s |
+  | 400 / 401 | no fallback: the request or key is wrong |
+
+- **Remembers cooldowns** in `GEMINI_STATE_FILE` (default `~/.cache/mlops-agent/gemini_state.json`),
+  so the next run does not spend a request rediscovering an exhausted model.
+- **Prevents bursts:** only one Gemini request runs at a time in the process (concurrent API
+  users queue), requests are at least `GEMINI_MIN_INTERVAL_S` apart, and each model gets at most
+  `GEMINI_RPM` requests in any 60 s window.
+- **Never auto-retries in the SDK.** A retried 429 is just another rejected request.
+
+Each response lists the model(s) that answered in `model` and every skipped model with the reason
+in `llm_fallbacks`. `GET /health` shows the chain's current availability without calling Gemini.
+
+Free-tier probe of this key on 2026-11-11 (one request per model), which set the default chain:
+
+| Model | Result |
+|---|---|
+| `gemini-3.5-flash`, `gemini-3.6-flash` | Usable, 20 requests/day each |
+| `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite` | Usable, tool calling works |
+| `gemini-3.7-flash`, `gemini-3.8-flash` | 504 after ~60 s; left out |
+| `gemini-4-carbon`, `gemini-4-argon` | No free-tier quota |
+| `gemini-2.5-*`, `*-latest`, `*-preview` | 404: retired or not served to this key |
+
 | Variable | Default | Purpose |
 |---|---|---|
 | `GEMINI_API_KEY` | - | Gemini API key |
-| `GEMINI_MODEL` | `gemini-3.5-flash` | Model; free tier quotas are per model per day |
+| `GEMINI_MODELS` | `gemini-3.5-flash,gemini-3.6-flash,gemini-3.5-flash-lite,gemini-3.1-flash-lite` | Fallback chain, best first (`GEMINI_MODEL` also accepted for one model) |
+| `GEMINI_MIN_INTERVAL_S` | `2` | Minimum seconds between Gemini requests |
+| `GEMINI_RPM` | `8` | Maximum requests per model per minute |
+| `GEMINI_MAX_WAIT_S` | `30` | Longest wait for a model before reporting none available |
+| `GEMINI_TIMEOUT_S` | `60` | Per-request timeout |
+| `GEMINI_STATE_FILE` | `~/.cache/mlops-agent/gemini_state.json` | Saved cooldowns and recent request times |
 | `GEMINI_THINKING_LEVEL` | `low` | `minimal`, `low`, `medium` or `high` |
 | `AGENT_ACTION_TTL_S` | `600` | Lifetime of a pending action |
 | `AGENT_API_TOKEN` | unset | If set, all endpoints except `/health` need `Authorization: Bearer <token>` |
@@ -295,3 +338,4 @@ namespaces even if the code were bypassed.
 | 7 | DVC-tracked dataset v1 (400 rows) with local remote; `training/train.py` stages; Airflow 3.4 + MLflow 3.18 Docker stack; `training_pipeline` DAG. Verified live: a run triggered via the agent tool passed all 6 tasks (F1 0.94, model v1 `@candidate`); a run with `min_f1=0.999` failed at `quality_gate`, blocked `register_model`, and was diagnosed by the agent tools from Airflow 3 structured `error_detail` logs |
 | 8 | Task 4: FastAPI prediction service (`api/`), its image, Kubernetes manifests (namespace, ConfigMap, 2-replica Deployment with probes and limits, ClusterIP Service, agent RBAC) and 8 Kubernetes tools with namespace + confirmation guards. Deployed on Docker Desktop Kubernetes 1.36: Pods load model v1 from MLflow; `/version` read through the API proxy; confirmed scale/restart worked; an injected bad image tag (`ErrImagePull`) was diagnosed by the tools via the restricted `mlops-agent` identity while the Service kept serving. 42 new tests (115 total) |
 | 9 | Multi-tool agent (Section 5): Gemini function calling (`agent/llm.py`), schema-validated tool registry (29 tools), orchestrator with confirmation-only state changes, retraining policy tools, FastAPI interface with request IDs and optional bearer token, CLI. DVC tools now find `dvc` without an activated venv. Verified live: the mandatory scenario queried MLflow, DVC, Kubernetes and Airflow and applied the policy (retraining not needed, with uncertainty about the `unknown` data.version tag); a requested restart stayed pending until confirmed over HTTP (revision 5 -> 6, second confirm 404); a kube-system restart was rejected; a Gemini 429 quota error produced no invented conclusions. 45 new tests (160 total) |
+| 10 | Free-tier Gemini resilience (`agent/gemini_pool.py`): model fallback chain chosen by probing every candidate model, per-error cooldowns persisted across runs, one-request-at-a-time pacing with per-model RPM windows, SDK auto-retries removed. CLI `--verbose` prints the JSON logs. Verified live: one question went `gemini-3.5-flash` (daily quota) -> `gemini-3.6-flash` (daily quota) -> `gemini-3.5-flash-lite` (served 3 turns, then 503) -> `gemini-3.1-flash-lite` (finished); the next run skipped the exhausted models without spending requests. 25 new tests (185 total) |

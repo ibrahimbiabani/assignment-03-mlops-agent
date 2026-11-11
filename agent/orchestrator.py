@@ -227,6 +227,7 @@ class Agent:
         start = time.perf_counter()
         records: list[ToolCallRecord] = []
         answer, error, steps = "", None, 0
+        session = None
         try:
             session = self.llm.start(SYSTEM_PROMPT, list(self.registry.values()))
             turn = session.send_user(message)
@@ -267,12 +268,17 @@ class Agent:
                 f"`{a.tool}` {json.dumps(a.arguments)} - action `{a.action_id}`" for a in pending
             )
         duration = round((time.perf_counter() - start) * 1000, 1)
+        # Report the model(s) that actually answered (the fallback chain may have switched).
+        used = getattr(session, "models_used", None)
+        model = " -> ".join(used) if used else self.llm.model
+        fallbacks = list(getattr(session, "fallbacks", []))
         log.info(
             json.dumps(
                 {
                     "event": "agent_request",
                     "request_id": rid,
-                    "model": self.llm.model,
+                    "model": model,
+                    "llm_fallbacks": len(fallbacks),
                     "steps": steps,
                     "tool_calls": len(records),
                     "unavailable": unavailable,
@@ -289,7 +295,8 @@ class Agent:
             pending_actions=pending,
             unavailable_sources=unavailable,
             steps=steps,
-            model=self.llm.model,
+            model=model,
+            llm_fallbacks=fallbacks,
             duration_ms=duration,
             error=error,
         )

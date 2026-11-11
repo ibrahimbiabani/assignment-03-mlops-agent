@@ -26,6 +26,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 
+from agent.gemini_pool import ModelPool
 from agent.llm import GeminiLLM, LLMError
 from agent.orchestrator import Agent
 from agent.schemas import ActionResult, AgentResponse, ChatRequest, PendingAction
@@ -78,7 +79,13 @@ def create_app(agent_factory: Callable[[], Agent] | None = None) -> FastAPI:
     @app.get("/health")
     def health() -> dict[str, Any]:
         load_env()
-        return {"status": "ok", "llm_configured": bool(os.environ.get("GEMINI_API_KEY"))}
+        body: dict[str, Any] = {
+            "status": "ok",
+            "llm_configured": bool(os.environ.get("GEMINI_API_KEY")),
+        }
+        if agent_factory is None:  # real service: show the free-tier chain (no API call made)
+            body["llm_models"] = ModelPool().status()
+        return body
 
     @app.get("/tools", dependencies=auth)
     def tools() -> list[dict[str, Any]]:
