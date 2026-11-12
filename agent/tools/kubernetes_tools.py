@@ -327,6 +327,12 @@ def list_services(namespace: str = DEFAULT_NAMESPACE) -> dict[str, Any]:
     return {"namespace": ns, "services": out}
 
 
+def _crashed(last_state: dict[str, Any]) -> bool:
+    """True if a previous container instance died abnormally (non-zero exit or OOM kill)."""
+    term = last_state.get("terminated") or {}
+    return term.get("exit_code") not in (0, None) or term.get("reason") == "OOMKilled"
+
+
 @tool("k8s_find_unhealthy")
 def find_unhealthy(namespace: str = DEFAULT_NAMESPACE) -> dict[str, Any]:
     """Unhealthy or restarting Pods, under-replicated Deployments and recent Warning events."""
@@ -357,15 +363,24 @@ def find_unhealthy(namespace: str = DEFAULT_NAMESPACE) -> dict[str, Any]:
             unhealthy.append({**s, "reasons": reasons})
         if s["restarts"]:
             last = [c["last_state"] for c in s["containers"] if c["last_state"]]
-            restarted.append({"name": s["name"], "restarts": s["restarts"], "last_states": last})
+            restarted.append(
+                {
+                    "name": s["name"],
+                    "restarts": s["restarts"],
+                    "crashed": any(_crashed(ls) for ls in last),
+                    "last_states": last,
+                }
+            )
     under = [
         _deployment_summary(d)
         for d in deployments
         if (d.status.ready_replicas or 0) < (d.spec.replicas or 0)
     ]
+    crashed = [r for r in restarted if r["crashed"]]
     return {
         "namespace": ns,
-        "healthy": not (unhealthy or restarted or under),
+        # A clean exit (code 0, e.g. the node rebooting) is reported but is not a fault.
+        "healthy": not (unhealthy or crashed or under),
         "unhealthy_pods": unhealthy,
         "restarted_pods": restarted,
         "under_replicated_deployments": under,

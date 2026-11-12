@@ -100,9 +100,12 @@ def test_find_best_run_ignores_failed_runs_and_runs_without_metric(mlflow):
     assert result.data["candidates_considered"] == 3
     assert result.data["runs_with_metric"] == 2
     assert [r["run_name"] for r in result.data["ranking"]] == ["best", "old"]
-    # Even a clean winner carries the "not automatically production-ready" caveat.
-    assert len(result.data["caveats"]) == 1
-    assert "production-ready" in result.data["caveats"][0]
+    assert [r["data_version"] for r in result.data["ranking"]] == ["data-v2.1", "data-v1.0"]
+    # Even a clean winner carries the "not automatically production-ready" caveat, and
+    # runs scored on different dataset versions (different test sets) are flagged.
+    production, versions = result.data["caveats"]
+    assert "production-ready" in production
+    assert "data-v1.0, data-v2.1" in versions and "not directly comparable" in versions
 
 
 def test_find_best_run_flags_small_margin(mlflow):

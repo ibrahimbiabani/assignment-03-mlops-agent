@@ -1,0 +1,9 @@
+# Check out text files with LF on every OS. DVC hashes raw bytes, so a CRLF checkout
+# (Git for Windows' default core.autocrlf=true) changes the md5 of pipeline dependencies
+# such as training/*.py and makes `dvc status` report changes that do not exist.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.joblib binary
+*.pdf binary

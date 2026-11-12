@@ -55,6 +55,9 @@ def test_stages_produce_split_model_and_metrics(workdir):
     metrics = json.loads((workdir / "metrics.json").read_text())
     assert set(metrics) == {"f1", "accuracy", "precision", "recall", "roc_auc"}
     assert metrics["f1"] > 0.9
+    # Outputs are byte-identical across OSes (LF only), so dvc.lock hashes are portable.
+    for out in ("processed/train.csv", "processed/test.csv", "metrics.json"):
+        assert b"\r\n" not in (workdir / out).read_bytes(), out
 
 
 def test_preprocess_refuses_invalid_data(workdir):

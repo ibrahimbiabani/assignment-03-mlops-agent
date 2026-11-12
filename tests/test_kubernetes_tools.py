@@ -267,6 +267,22 @@ def test_healthy_namespace(cluster):
     assert kt.find_unhealthy().data["healthy"] is True
 
 
+def test_clean_restart_is_reported_but_not_a_fault(cluster):
+    clean = make_pod("rebooted", restarts=2)
+    clean.status.container_statuses[0].last_state = k.V1ContainerState(
+        terminated=k.V1ContainerStateTerminated(exit_code=0, reason="Completed")
+    )
+    cluster.pods = [clean, make_pod("oom", restarts=1, last_reason="OOMKilled")]
+
+    data = kt.find_unhealthy().data
+    crashed = {r["name"]: r["crashed"] for r in data["restarted_pods"]}
+    assert crashed == {"rebooted": False, "oom": True}
+    assert data["healthy"] is False  # because of the OOM kill
+
+    cluster.pods = [clean]
+    assert kt.find_unhealthy().data["healthy"] is True
+
+
 def test_deployed_version_includes_what_the_app_reports(cluster):
     data = kt.get_deployed_version().data
 

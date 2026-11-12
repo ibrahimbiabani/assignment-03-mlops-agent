@@ -55,6 +55,9 @@ services:
       - ./dags:/opt/airflow/dags
       - .:/opt/airflow/project
       - airflow-state:/opt/airflow/state
+      # Task logs must outlive the container: without this volume, recreating it loses
+      # every log the agent's airflow_get_task_logs needs for failure diagnosis.
+      - airflow-logs:/opt/airflow/logs
     depends_on:
       mlflow:
         condition: service_healthy
@@ -63,3 +66,4 @@ services:
 volumes:
   mlflow-data:
   airflow-state:
+  airflow-logs:

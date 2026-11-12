@@ -56,6 +56,7 @@ def main(argv: list[str] | None = None) -> None:
         args.metrics.write_text(
             json.dumps({k: round(v, 4) for k, v in metrics.items()}, indent=2) + "\n",
             encoding="utf-8",
+            newline="\n",  # same bytes (and DVC hash) on every OS
         )
         print(json.dumps(metrics))
 

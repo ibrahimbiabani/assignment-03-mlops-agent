@@ -149,8 +149,9 @@ def preprocess(
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     paths = {"train": str(out / "train.csv"), "test": str(out / "test.csv")}
-    train.to_csv(paths["train"], index=False)
-    test.to_csv(paths["test"], index=False)
+    # LF on every OS so DVC hashes of the split match between Windows and Linux.
+    train.to_csv(paths["train"], index=False, lineterminator="\n")
+    test.to_csv(paths["test"], index=False, lineterminator="\n")
     log.info("split %d rows into train=%d test=%d", len(df), len(train), len(test))
     return paths
 

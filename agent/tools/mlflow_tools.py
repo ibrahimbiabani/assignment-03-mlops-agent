@@ -164,6 +164,13 @@ def _caveats(metric: str, ranked: list[tuple[Any, float]]) -> list[str]:
         notes.append("Only one run logged this metric, so there was nothing to compare against.")
     elif abs(best_val - ranked[1][1]) < SMALL_MARGIN:
         notes.append(f"Margin over the runner-up is only {abs(best_val - ranked[1][1]):.4f}.")
+    versions = {r.data.tags.get("data.version", "unknown") for r, _ in ranked}
+    if len(versions) > 1:
+        notes.append(
+            "Ranked runs were evaluated on different dataset versions "
+            f"({', '.join(sorted(versions))}), so their test sets differ and the scores "
+            "are not directly comparable."
+        )
     return notes
 
 
@@ -174,6 +181,7 @@ def _brief(run: Any, value: float) -> dict[str, Any]:
         "experiment_id": run.info.experiment_id,
         "value": value,
         "quality_gate": run.data.tags.get(QUALITY_GATE_TAG),
+        "data_version": run.data.tags.get("data.version"),
     }
 
 
