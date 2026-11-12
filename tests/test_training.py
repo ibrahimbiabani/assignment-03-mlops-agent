@@ -143,6 +143,12 @@ def test_pipeline_logs_provenance_passes_gate_and_registers(
     versions = mlflow_tools.get_model_versions(train.REGISTERED_MODEL).data["versions"]
     assert versions[0]["aliases"] == ["candidate"]
 
+    # MLflow 3 logged models are separate entities; get_run must still surface them.
+    logged = mlflow_tools.get_run(result["run_id"]).data["logged_models"]
+    assert [(m["name"], m["model_uri"], m["status"]) for m in logged] == [
+        ("model", result["model_uri"], "READY")
+    ]
+
 
 def test_failed_quality_gate_blocks_registration(tracking, dataset, tmp_path):
     result = _train_and_log(dataset, tmp_path, {"model_type": "logistic_regression"}, {})

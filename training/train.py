@@ -179,6 +179,19 @@ def train_model(train_path: str | Path, model_path: str | Path, params: dict[str
     return str(model_path)
 
 
+def compute_metrics(model: Any, test: pd.DataFrame) -> dict[str, float]:
+    """Held-out metrics; shared by the MLflow path and the DVC `evaluate` stage."""
+    x, y = test.drop(columns=[TARGET]), test[TARGET]
+    pred = model.predict(x)
+    return {
+        "f1": float(f1_score(y, pred)),
+        "accuracy": float(accuracy_score(y, pred)),
+        "precision": float(precision_score(y, pred)),
+        "recall": float(recall_score(y, pred)),
+        "roc_auc": float(roc_auc_score(y, model.predict_proba(x)[:, 1])),
+    }
+
+
 def evaluate_and_log(
     model_path: str | Path,
     test_path: str | Path,
@@ -189,15 +202,8 @@ def evaluate_and_log(
     """Score on the held-out split and log params, metrics, provenance and model to MLflow."""
     model = joblib.load(model_path)
     df = pd.read_csv(test_path)
-    x, y = df.drop(columns=[TARGET]), df[TARGET]
-    pred = model.predict(x)
-    metrics = {
-        "f1": f1_score(y, pred),
-        "accuracy": accuracy_score(y, pred),
-        "precision": precision_score(y, pred),
-        "recall": recall_score(y, pred),
-        "roc_auc": roc_auc_score(y, model.predict_proba(x)[:, 1]),
-    }
+    x = df.drop(columns=[TARGET])
+    metrics = compute_metrics(model, df)
     mlflow.set_experiment(EXPERIMENT)
     with mlflow.start_run(tags={**provenance, **(extra_tags or {})}) as run:
         mlflow.log_params({k: v for k, v in params.items() if v is not None})

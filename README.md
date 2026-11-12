@@ -8,7 +8,16 @@ Apache Airflow and Kubernetes. Operational answers are built only from real tool
 ```bash
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -e ".[dev,dvc]"
+pip install -r requirements.lock # exact, tested versions (any OS, Python >= 3.11)
+pip install -e . --no-deps
+```
+
+`requirements.lock` is a universal lockfile generated from `pyproject.toml` (which only states
+compatible ranges). CI installs from it too. After changing dependencies, regenerate it:
+
+```bash
+pip install uv
+uv pip compile pyproject.toml --extra dev --extra dvc --universal --python-version 3.11 -o requirements.lock
 ```
 
 ## Running tests
@@ -42,6 +51,10 @@ docker compose exec airflow airflow dags unpause training_pipeline
 | MLflow | http://localhost:5000 | SQLite backend and artifacts in the `mlflow-data` volume |
 | Airflow | http://localhost:8080 | `airflow standalone` (Airflow 3.4.0), user `admin`, password from `.env` |
 
+If port 8080 is already taken on the host (on Windows, HTTP.sys can hold it: `netstat -ano`
+shows PID 4, and Airflow then answers 404 on every path), set `AIRFLOW_HOST_PORT=8081` and
+`AIRFLOW_BASE_URL=http://localhost:8081` in `.env`, then `docker compose up -d airflow`.
+
 The Airflow image (`docker/airflow/Dockerfile`) adds `mlflow-skinny` under Airflow's official
 constraints. The project is mounted at `/opt/airflow/project` so the DAG can import `training/`,
 read the DVC-tracked data and its Git history, and write per-run files to `artifacts/`.
@@ -54,9 +67,39 @@ Git stores only `data/raw/breast_cancer.csv.dvc`. The default remote `localremot
 
 ```bash
 dvc pull                                         # fetch the data for the checked-out version
-python -m training.make_dataset --rows 400       # how version 1 was created
 dvc add data/raw/breast_cancer.csv && dvc push   # after changing the data
-git tag data-v1.0                                # name dataset versions with data-* tags
+git tag -a data-vX.Y -m "..."                    # name dataset versions with data-* tags
+```
+
+| Version | Git tag | Rows | DVC md5 | Created with |
+|---|---|---|---|---|
+| 1 | `data-v1.0` | 400 | `dd00f1dcdb4353dacae800869da547c5` | `python -m training.make_dataset --rows 400` |
+| 2 | `data-v2.0` | 569 | `b154f6a78a166306105a372ea2344899` | `python -m training.make_dataset` |
+
+The remote is a local folder, so a fresh clone on another machine cannot `dvc pull`. Recreate a
+version with the command in the table instead; `dvc status` then confirms the file matches the
+hash recorded in Git.
+
+Restore an earlier dataset version exactly (the `dvc_get_reproduction_steps` tool returns these
+steps for any revision):
+
+```bash
+git checkout data-v1.0 -- data/raw/breast_cancer.csv.dvc
+dvc checkout data/raw/breast_cancer.csv          # or dvc pull if not in the local cache
+git checkout HEAD -- data/raw/breast_cancer.csv.dvc && dvc checkout   # back to the current version
+```
+
+### DVC pipeline (`dvc.yaml`, `params.yaml`, `dvc.lock`)
+
+`dvc repro` runs `preprocess -> train -> evaluate` (`training/stages.py`) and writes
+`metrics.json`; `dvc.lock` pins the hash of every input and output, so rerunning on the same data
+and parameters changes nothing. It has no MLflow side effects: logging, the quality gate and
+promotion only happen in the Airflow DAG.
+
+```bash
+dvc repro            # reruns only stages whose data, code or params changed
+dvc metrics show     # data-v2.0: F1 0.986, ROC-AUC 0.995
+dvc params diff      # parameter changes since the last commit
 ```
 
 ## Training pipeline (`dags/training_pipeline.py`)
@@ -77,7 +120,9 @@ itself), and every later task is then skipped as `upstream_failed`. `register_mo
 promotion step and re-checks the gate tag before registering. Thresholds and model settings are
 DAG params, e.g. trigger with conf `{"model_type": "random_forest", "min_f1": 0.95}`.
 
-The same stages run without Airflow: `python -m training.train --data data/raw/breast_cancer.csv`.
+The same six stages also run without Airflow with `python -m training.train --data
+data/raw/breast_cancer.csv`. Note this logs to MLflow and, if the gate passes, moves `@candidate`
+just like the DAG. Use `dvc repro` for a side-effect-free run.
 
 ## Prediction API on Kubernetes
 
@@ -339,3 +384,4 @@ namespaces even if the code were bypassed.
 | 8 | Task 4: FastAPI prediction service (`api/`), its image, Kubernetes manifests (namespace, ConfigMap, 2-replica Deployment with probes and limits, ClusterIP Service, agent RBAC) and 8 Kubernetes tools with namespace + confirmation guards. Deployed on Docker Desktop Kubernetes 1.36: Pods load model v1 from MLflow; `/version` read through the API proxy; confirmed scale/restart worked; an injected bad image tag (`ErrImagePull`) was diagnosed by the tools via the restricted `mlops-agent` identity while the Service kept serving. 42 new tests (115 total) |
 | 9 | Multi-tool agent (Section 5): Gemini function calling (`agent/llm.py`), schema-validated tool registry (29 tools), orchestrator with confirmation-only state changes, retraining policy tools, FastAPI interface with request IDs and optional bearer token, CLI. DVC tools now find `dvc` without an activated venv. Verified live: the mandatory scenario queried MLflow, DVC, Kubernetes and Airflow and applied the policy (retraining not needed, with uncertainty about the `unknown` data.version tag); a requested restart stayed pending until confirmed over HTTP (revision 5 -> 6, second confirm 404); a kube-system restart was rejected; a Gemini 429 quota error produced no invented conclusions. 45 new tests (160 total) |
 | 10 | Free-tier Gemini resilience (`agent/gemini_pool.py`): model fallback chain chosen by probing every candidate model, per-error cooldowns persisted across runs, one-request-at-a-time pacing with per-model RPM windows, SDK auto-retries removed. CLI `--verbose` prints the JSON logs. Verified live: one question went `gemini-3.5-flash` (daily quota) -> `gemini-3.6-flash` (daily quota) -> `gemini-3.5-flash-lite` (served 3 turns, then 503) -> `gemini-3.1-flash-lite` (finished); the next run skipped the exhausted models without spending requests. 25 new tests (185 total) |
+| 11 | Audit fixes and dataset v2. `mlflow_get_run` lists MLflow 3 logged models; universal `requirements.lock` (uv) used by CI; DVC pipeline `dvc.yaml`/`params.yaml`/`dvc.lock` (`preprocess -> train -> evaluate`, no MLflow side effects; a second `dvc repro` skips every stage). Unexpected failure diagnosed: after a reboot Windows HTTP.sys (PID 4) held host port 8080, Docker could not publish Airflow, and every API call returned 404; the Airflow host port is now configurable (`AIRFLOW_HOST_PORT`, here 8081) and the tool names the cause. A DAG run on `data-v1.0` recorded full provenance (`data.version`, commit `e63dabf`, md5) and registered model v2 `@candidate`. Dataset v2 (569 rows, md5 `b154f6a7`) created and pushed; `dvc repro` on it gives F1 0.986 vs 0.94 on v1. 3 new tests (188 total) |

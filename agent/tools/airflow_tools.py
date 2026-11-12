@@ -68,6 +68,11 @@ class AirflowClient:
             f"{self.base_url}/auth/token",
             json={"username": self._username, "password": self._password},
         )
+        if resp.status_code == 404:
+            raise ToolError(
+                f"{self.base_url} is not an Airflow 3 API server (POST /auth/token returned 404); "
+                "check AIRFLOW_BASE_URL and that Airflow's port is actually published"
+            )
         if resp.status_code not in (200, 201):
             raise ToolError(f"Airflow authentication failed (HTTP {resp.status_code})")
         self._token = resp.json().get("access_token")

@@ -222,7 +222,11 @@ def list_runs(
 
 @mlflow_tool("mlflow_get_run")
 def get_run(run_id: str) -> dict[str, Any]:
-    """Metrics, parameters, user tags and top-level artifacts of one run."""
+    """Metrics, parameters, user tags, run artifacts and logged models of one run.
+
+    In MLflow 3, models logged with log_model(name=...) are separate LoggedModel entities
+    (models:/m-...) rather than run artifacts, so they are listed under `logged_models`.
+    """
     if not isinstance(run_id, str) or not _RUN_ID_RE.match(run_id):
         raise InvalidToolRequest(f"invalid run id: {run_id!r}")
     client = get_client()
@@ -232,6 +236,21 @@ def get_run(run_id: str) -> dict[str, Any]:
     out["artifacts"] = [
         {"path": a.path, "is_dir": a.is_dir, "file_size": a.file_size}
         for a in client.list_artifacts(run_id)
+    ]
+    models = client.search_logged_models(
+        experiment_ids=[run.info.experiment_id],
+        filter_string=f"source_run_id = '{run_id}'",  # run_id validated above
+    )
+    out["logged_models"] = [
+        {
+            "model_id": m.model_id,
+            "name": m.name,
+            "model_uri": f"models:/{m.model_id}",
+            "status": str(getattr(m.status, "value", m.status)),
+            "artifact_location": m.artifact_location,
+            "created": _ts(m.creation_timestamp),
+        }
+        for m in models
     ]
     return out
 

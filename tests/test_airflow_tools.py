@@ -201,6 +201,17 @@ def test_bad_credentials_fail_without_leaking_password(airflow, monkeypatch, cap
     assert "wrong-password" not in result.error + caplog.text
 
 
+def test_wrong_server_on_the_port_is_named_clearly(airflow, monkeypatch):
+    """E.g. Windows HTTP.sys holding the port: every path, including /auth/token, is 404."""
+    monkeypatch.setenv("AIRFLOW_BASE_URL", airflow.url + "/not-airflow")
+
+    result = airflow_tools.list_dags()
+
+    assert result.status == ToolStatus.ERROR
+    assert "is not an Airflow 3 API server" in result.error
+    assert result.data is None
+
+
 def test_timeout_returns_timeout_status(airflow, monkeypatch):
     monkeypatch.setenv("AIRFLOW_TIMEOUT_S", "0.2")
     airflow.state["delay"] = 1.0
