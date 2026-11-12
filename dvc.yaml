@@ -1,0 +1,35 @@
+# Reproducible offline pipeline: `dvc repro` reruns only stages whose inputs changed;
+# dvc.lock records the exact hashes. MLflow logging and promotion live in the Airflow DAG.
+stages:
+  preprocess:
+    cmd: python -m training.stages preprocess --data data/raw/breast_cancer.csv --out data/processed
+    deps:
+      - data/raw/breast_cancer.csv
+      - training/stages.py
+      - training/train.py
+    params:
+      - preprocess
+    outs:
+      - data/processed
+
+  train:
+    cmd: python -m training.stages train --train data/processed/train.csv --model models/model.joblib
+    deps:
+      - data/processed/train.csv
+      - training/stages.py
+      - training/train.py
+    params:
+      - train
+    outs:
+      - models/model.joblib
+
+  evaluate:
+    cmd: python -m training.stages evaluate --model models/model.joblib --test data/processed/test.csv --metrics metrics.json
+    deps:
+      - models/model.joblib
+      - data/processed/test.csv
+      - training/stages.py
+      - training/train.py
+    metrics:
+      - metrics.json:
+          cache: false

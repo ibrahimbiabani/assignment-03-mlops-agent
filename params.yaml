@@ -1,0 +1,9 @@
+# Parameters of the DVC pipeline (dvc.yaml). Changing a value makes `dvc repro` rerun
+# only the stages that depend on it.
+preprocess:
+  test_size: 0.2
+  seed: 42
+train:
+  model_type: logistic_regression
+  C: 1.0
+  seed: 42
