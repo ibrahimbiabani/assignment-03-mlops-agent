@@ -118,6 +118,26 @@ read-only tools the agent uses, with no LLM involved.
 
 Example log line: `{"event": "tool_call", "request_id": "5db2892665c5", "tool": "mlflow_get_model_versions", "status": "success", "duration_ms": 265.67}`
 
+### Screenshots
+
+Taken on 2026-11-12 after the demo, so they show the final state with model v3 deployed.
+
+| Technology | Screenshot | What it shows |
+|---|---|---|
+| DVC | [dvc_versions.png](../screenshots/dvc_versions.png) | Tags `data-v1.0`/`data-v2.0`, `dvc diff` between them, `dvc status` clean, `dvc metrics show` (F1 0.9861) |
+| MLflow | [mlflow_runs.png](../screenshots/mlflow_runs.png) | All 4 runs with F1, ROC-AUC, `data.version` and linked registry versions v1-v3 |
+| MLflow | [mlflow_run_v2.png](../screenshots/mlflow_run_v2.png) | Run `bouncy-shrew-930`: metrics, params, provenance tags (`data-v2.0`, commit `cef1bf0`, md5 `b154f6a7`), `quality_gate: passed`, registered as v3 |
+| MLflow | [mlflow_metrics_comparison.png](../screenshots/mlflow_metrics_comparison.png), [mlflow_tags_comparison.png](../screenshots/mlflow_tags_comparison.png) | Runs compared side by side: metrics; provenance per run; the failed gate's `quality_gate.failures` (`f1` required 0.999, actual 0.94) |
+| MLflow | [mlflow_registry.png](../screenshots/mlflow_registry.png), [mlflow_v3_candidate.png](../screenshots/mlflow_v3_candidate.png) | Logged models linked to registry versions v1-v3; version 3 with alias `@candidate` and its source run |
+| Airflow | [airflow_graph.png](../screenshots/airflow_graph.png) | The six-task DAG and its dependencies |
+| Airflow | [airflow_grid.png](../screenshots/airflow_grid.png) | 4 runs: the 9 Nov run with `quality_gate` failed and `register_model` `upstream_failed`; the others all green |
+| Airflow | [airflow_task_log.png](../screenshots/airflow_task_log.png) | `quality_gate` log of the 05:29 UTC run: "run 4b27eb8b… passed quality gate" |
+| Kubernetes | [k8s_resources.png](../screenshots/k8s_resources.png) | Deployment 2/2, Pods running with 0 restarts, ClusterIP Service, 2 endpoints (restricted `mlops-agent` context) |
+| Kubernetes | [k8s_describe.png](../screenshots/k8s_describe.png) | Probes, CPU/memory requests and limits, ConfigMap via `envFrom`, `maxUnavailable: 0`, rollout events |
+| Kubernetes | [k8s_version_logs.png](../screenshots/k8s_version_logs.png) | `/version` through the API proxy (model v3, run `4b27eb8b`), probe logs returning 200 |
+| Agent | [agent_swagger.png](../screenshots/agent_swagger.png) | The agent's FastAPI interface: `/chat`, `/tools`, `/actions` with confirm and reject |
+| Agent | [agent_cli.png](../screenshots/agent_cli.png) | A live CLI answer citing its three Kubernetes tool calls, with request ID, model and timings |
+
 ## 4. Five tested agent conversations
 
 Every exchange went through the agent's HTTP API, and each response was saved verbatim
@@ -147,7 +167,8 @@ so the pool finished on `gemini-3.5-flash-lite` without a user-visible error.
 The agent used three MLflow tools: `mlflow_list_runs`, `mlflow_find_best_run` and
 `mlflow_compare_runs`. It reported that only 3 runs existed and built a comparison table.
 Because all three tie at F1 0.94, it chose `7d59d791` on the evidence beyond F1: the quality
-gate passed, and the provenance is complete where the other two runs have none. It repeated the
+gate passed, and the provenance is complete, while the two older runs recorded only the
+dataset md5 and no `data.version` or `data.git_commit`. It repeated the
 tool's caveats: F1 alone is not production-readiness, the margin is 0.0000, and the runs used
 different data versions.
 
@@ -162,7 +183,8 @@ selection, and a rule forbidding any statement about policy or retraining that
 > *Find the best recent model, identify the dataset version used to train it, check the
 > deployment status, and explain whether retraining is necessary.*
 
-- **c03a.** The cluster still served model v1, trained before provenance tags existed. The
+- **c03a.** The cluster still served model v1. Its run predates the `data.version` and
+  `data.git_commit` tags; only `data.dvc_md5` was recorded. The
   agent queried all four systems and passed `model_data_version: "unknown"` to
   `policy_check_retraining`. The data-version rule therefore came back `unknown`, and the
   agent reported it as an uncertainty. It did not recommend retraining without evidence and
