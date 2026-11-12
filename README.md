@@ -57,7 +57,8 @@ shows PID 4, and Airflow then answers 404 on every path), set `AIRFLOW_HOST_PORT
 
 The Airflow image (`docker/airflow/Dockerfile`) adds `mlflow-skinny` under Airflow's official
 constraints. The project is mounted at `/opt/airflow/project` so the DAG can import `training/`,
-read the DVC-tracked data and its Git history, and write per-run files to `artifacts/`.
+read the DVC-tracked data and its Git history, and write per-run files to `artifacts/`. Task logs
+are kept in the `airflow-logs` volume so they survive container recreation.
 
 ## Dataset (DVC)
 
@@ -76,9 +77,21 @@ git tag -a data-vX.Y -m "..."                    # name dataset versions with da
 | 1 | `data-v1.0` | 400 | `dd00f1dcdb4353dacae800869da547c5` | `python -m training.make_dataset --rows 400` |
 | 2 | `data-v2.0` | 569 | `b154f6a78a166306105a372ea2344899` | `python -m training.make_dataset` |
 
-The remote is a local folder, so a fresh clone on another machine cannot `dvc pull`. Recreate a
-version with the command in the table instead; `dvc status` then confirms the file matches the
-hash recorded in Git.
+The remote is a local folder. A fresh clone on the same machine can pull from it once it is
+pointed at the absolute path (the committed URL is relative to the original checkout):
+
+```bash
+dvc remote modify --local localremote url /absolute/path/to/dvc-remote
+dvc pull
+```
+
+On another machine, recreate a version with the command in the table; `dvc status` then confirms
+the file matches the hash recorded in Git. `docs/evidence/01_dvc_reproducible_checkout.txt` shows
+a fresh clone restoring both versions byte-exact from the remote.
+
+`.gitattributes` forces LF line endings on checkout. DVC hashes raw bytes, so a CRLF checkout
+(Git for Windows' default) would change the hashes of the pipeline's code dependencies and make
+`dvc status` report changes that do not exist.
 
 Restore an earlier dataset version exactly (the `dvc_get_reproduction_steps` tool returns these
 steps for any revision):
@@ -302,7 +315,8 @@ Requests fail fast (2 retries, 10 s timeout) unless `MLFLOW_HTTP_REQUEST_MAX_RET
 
 `mlflow_find_best_run` never treats the top score as production-ready. It returns caveats drawn
 from the recorded evidence: a missing or failed quality gate, missing dataset provenance, a
-small margin over the runner-up, or only one comparable run.
+small margin over the runner-up, only one comparable run, or ranked runs evaluated on different
+dataset versions (different test sets, so the scores are not directly comparable).
 
 **Run tag convention** (written by the training pipeline, read by the agent):
 
@@ -353,7 +367,7 @@ tasks that were only `upstream_failed`.
 | `k8s_get_pod_status` | Phase, conditions, container states (e.g. `CrashLoopBackOff`, last `OOMKilled`), probe settings, the Pod's events |
 | `k8s_get_pod_logs` | Log tail of a Pod, or of its previous crashed container; error lines; secrets redacted |
 | `k8s_list_services` | Services with type, ports, selector, and ready/not-ready endpoint counts |
-| `k8s_find_unhealthy` | Unhealthy/restarting Pods with reasons, under-replicated Deployments, newest Warning events |
+| `k8s_find_unhealthy` | Unhealthy Pods with reasons, restarts marked as crashes (non-zero exit, OOM kill) or clean exits (e.g. node reboot, not a fault), under-replicated Deployments, newest Warning events |
 | `k8s_get_deployed_version` | Manifest version/image/revision plus what the running app reports at `/version` (via the API server's service proxy) |
 | `k8s_restart_deployment` | Rolling restart (**state-changing**) |
 | `k8s_scale_deployment` | Scale to 1-5 replicas (**state-changing**) |
@@ -370,6 +384,23 @@ In the cluster, the `mlops-agent` Role allows only reads in `mlops-app` plus pat
 Deployments and their scale, so it cannot delete, create, read Secrets or reach other
 namespaces even if the code were bypassed.
 
+## Documentation and evidence
+
+| Document | Contents |
+|---|---|
+| [architecture.md](architecture.md) | Components, request flow, safety and permission model, provenance chain, design decisions |
+| [docs/technical_report.md](docs/technical_report.md) | Technical report: architecture, tool permissions, evidence, five conversations, failure investigations, limitations |
+| [docs/conversations/](docs/conversations/transcripts.md) | Every demo exchange with the agent API as JSON (full tool outputs) plus a rendered transcript |
+| [docs/evidence/](docs/evidence/) | Tool exports for DVC, MLflow, Airflow and Kubernetes, `kubectl` state, DVC restore demo, failure injections, structured agent logs |
+
+Regenerate the exports against the running stack:
+
+```bash
+python scripts/export_evidence.py            # read-only tool calls -> docs/evidence/tools_*.json
+python scripts/render_conversations.py       # docs/conversations/*.json -> transcripts.md
+bash scripts/dvc_restore_demo.sh docs/evidence/01_dvc_reproducible_checkout.txt   # Git Bash on Windows
+```
+
 ## Development log
 
 | Step | Change |
@@ -385,3 +416,4 @@ namespaces even if the code were bypassed.
 | 9 | Multi-tool agent (Section 5): Gemini function calling (`agent/llm.py`), schema-validated tool registry (29 tools), orchestrator with confirmation-only state changes, retraining policy tools, FastAPI interface with request IDs and optional bearer token, CLI. DVC tools now find `dvc` without an activated venv. Verified live: the mandatory scenario queried MLflow, DVC, Kubernetes and Airflow and applied the policy (retraining not needed, with uncertainty about the `unknown` data.version tag); a requested restart stayed pending until confirmed over HTTP (revision 5 -> 6, second confirm 404); a kube-system restart was rejected; a Gemini 429 quota error produced no invented conclusions. 45 new tests (160 total) |
 | 10 | Free-tier Gemini resilience (`agent/gemini_pool.py`): model fallback chain chosen by probing every candidate model, per-error cooldowns persisted across runs, one-request-at-a-time pacing with per-model RPM windows, SDK auto-retries removed. CLI `--verbose` prints the JSON logs. Verified live: one question went `gemini-3.5-flash` (daily quota) -> `gemini-3.6-flash` (daily quota) -> `gemini-3.5-flash-lite` (served 3 turns, then 503) -> `gemini-3.1-flash-lite` (finished); the next run skipped the exhausted models without spending requests. 25 new tests (185 total) |
 | 11 | Audit fixes and dataset v2. `mlflow_get_run` lists MLflow 3 logged models; universal `requirements.lock` (uv) used by CI; DVC pipeline `dvc.yaml`/`params.yaml`/`dvc.lock` (`preprocess -> train -> evaluate`, no MLflow side effects; a second `dvc repro` skips every stage). Unexpected failure diagnosed: after a reboot Windows HTTP.sys (PID 4) held host port 8080, Docker could not publish Airflow, and every API call returned 404; the Airflow host port is now configurable (`AIRFLOW_HOST_PORT`, here 8081) and the tool names the cause. A DAG run on `data-v1.0` recorded full provenance (`data.version`, commit `e63dabf`, md5) and registered model v2 `@candidate`. Dataset v2 (569 rows, md5 `b154f6a7`) created and pushed; `dvc repro` on it gives F1 0.986 vs 0.94 on v1. 3 new tests (188 total) |
+| 12 | Evidence, demo and documentation. DVC restore demo: a fresh clone with an empty cache restored `data-v1.0` and `data-v2.0` byte-exact from the remote. It exposed an unexpected failure: `core.autocrlf` CRLF checkouts changed the hashes of the pipeline's code dependencies, so `dvc status` saw phantom changes; fixed with `.gitattributes` (LF) and OS-independent output writers. Second unexpected failure: Airflow task logs were lost when the container was recreated; fixed with an `airflow-logs` volume (verified across `--force-recreate`). Demo through the agent API: dataset provenance, model selection, the mandatory multi-tool scenario (first `unknown` provenance, no recommendation; after a confirmed restart, retraining recommended under `require_latest_data_version`), a confirmed retrain on `data-v2.0` (F1 0.9861, model v3), injected failures (bad ConfigMap alias -> API unavailable, diagnosed from Pod logs and fixed with a confirmed restart; MLflow stopped -> reported unavailable, nothing invented), and a rejected kube-system change. Prompt tightened after a Flash-Lite answer asserted a policy result it had not checked. `k8s_find_unhealthy` separates crash restarts from clean exits; `mlflow_find_best_run` flags rankings across dataset versions. Added `scripts/export_evidence.py`, `scripts/render_conversations.py`, `architecture.md` and `docs/technical_report.md`. 2 new tests (190 total) |

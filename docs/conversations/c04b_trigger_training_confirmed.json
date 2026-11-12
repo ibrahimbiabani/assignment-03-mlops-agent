@@ -1,0 +1,31 @@
+{
+  "endpoint": "POST /actions/9710fed27c30419c/confirm",
+  "http_status": 200,
+  "response": {
+    "action_id": "9710fed27c30419c",
+    "status": "executed",
+    "result": {
+      "tool": "airflow_trigger_dag",
+      "status": "success",
+      "data": {
+        "dag_id": "training_pipeline",
+        "run": {
+          "dag_run_id": "manual__2026-11-12T05:29:09.865813+00:00",
+          "state": "queued",
+          "run_type": "manual",
+          "triggered_by": "rest_api",
+          "logical_date": null,
+          "run_after": "2026-11-12T05:29:09.865813Z",
+          "start_date": null,
+          "end_date": null,
+          "duration": null,
+          "conf": {},
+          "note": "Triggered by MLOps agent (request 68badcb623c0)"
+        }
+      },
+      "error": null,
+      "duration_ms": 180.41
+    },
+    "detail": null
+  }
+}

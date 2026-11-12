@@ -1,0 +1,14 @@
+# Injected failure 2: MLflow tracking server stopped
+$ docker compose stop mlflow
+ Container assignment03-mlflow-1 Stopping 
+ Container assignment03-mlflow-1 Stopped 
+$ docker compose ps mlflow
+NAME                    STATUS
+assignment03-mlflow-1   Exited (137) Less than a second ago
+
+# Resolution
+$ docker compose start mlflow
+ Container assignment03-mlflow-1 Starting 
+ Container assignment03-mlflow-1 Started 
+NAME                    STATUS
+assignment03-mlflow-1   Up 9 seconds (health: starting)

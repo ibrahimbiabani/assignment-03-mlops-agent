@@ -1,0 +1,44 @@
+{
+  "endpoint": "POST /chat",
+  "http_status": 200,
+  "request": {
+    "message": "I restored the ConfigMap so MODEL_ALIAS is candidate again. Restart the prediction-api deployment so the Pods pick up the fix."
+  },
+  "response": {
+    "request_id": "dea8c25ce735",
+    "answer": "I have proposed a rolling restart of the `prediction-api` deployment in the `mlops-app` namespace to pick up the updated ConfigMap (`MODEL_ALIAS=candidate`). \n\n**Action ID:** `f625254f7880426c`\n\nThis action is pending your confirmation. Would you like to proceed with the restart?\n\n> Pending your confirmation (not executed): `k8s_restart_deployment` {\"deployment\": \"prediction-api\", \"namespace\": \"mlops-app\"} - action `f625254f7880426c`",
+    "tool_calls": [
+      {
+        "tool": "k8s_restart_deployment",
+        "arguments": {
+          "deployment": "prediction-api",
+          "namespace": "mlops-app"
+        },
+        "status": "confirmation_required",
+        "duration_ms": 0.03,
+        "error": null,
+        "data": null,
+        "action_id": "f625254f7880426c"
+      }
+    ],
+    "pending_actions": [
+      {
+        "action_id": "f625254f7880426c",
+        "tool": "k8s_restart_deployment",
+        "arguments": {
+          "deployment": "prediction-api",
+          "namespace": "mlops-app"
+        },
+        "request_id": "dea8c25ce735",
+        "created_at": "2026-11-12T05:31:25.858776+00:00",
+        "expires_at": "2026-11-12T05:41:25.858776+00:00"
+      }
+    ],
+    "unavailable_sources": [],
+    "steps": 2,
+    "model": "gemini-3.5-flash-lite",
+    "llm_fallbacks": [],
+    "duration_ms": 3309.0,
+    "error": null
+  }
+}

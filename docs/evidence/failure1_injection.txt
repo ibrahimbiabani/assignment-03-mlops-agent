@@ -1,0 +1,18 @@
+# Injected failure 1: bad ConfigMap value + Pods recreated (operator context docker-desktop)
+
+$ kubectl --context docker-desktop -n mlops-app patch configmap prediction-api-config --type merge -p {"data":{"MODEL_ALIAS":"champion"}}
+configmap/prediction-api-config patched
+
+$ kubectl --context docker-desktop -n mlops-app delete pod -l app.kubernetes.io/name=prediction-api --wait=false
+pod "prediction-api-7d5ff5c4bc-dr57c" deleted from mlops-app namespace
+pod "prediction-api-7d5ff5c4bc-ntl9g" deleted from mlops-app namespace
+NAME                                  READY   STATUS    RESTARTS   AGE
+pod/prediction-api-7d5ff5c4bc-bxntz   0/1     Running   0          46s
+pod/prediction-api-7d5ff5c4bc-h8x2f   0/1     Running   0          46s
+
+NAME                                                  ADDRESSTYPE   PORTS   ENDPOINTS             AGE
+endpointslice.discovery.k8s.io/prediction-api-6rvwd   IPv4          8000    10.1.0.41,10.1.0.40   42h
+
+# Resolution: restore the ConfigMap from the versioned manifest
+$ kubectl --context docker-desktop apply -f kubernetes/configmap.yaml
+configmap/prediction-api-config configured

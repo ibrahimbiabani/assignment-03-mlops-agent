@@ -1,0 +1,44 @@
+{
+  "endpoint": "POST /chat",
+  "http_status": 200,
+  "request": {
+    "message": "Restart the prediction-api deployment so the pods load the model currently registered under the @candidate alias."
+  },
+  "response": {
+    "request_id": "ff3e67b97201",
+    "answer": "A proposal to perform a rolling restart of the `prediction-api` deployment has been created and is pending your confirmation.\n\n### Action Summary\n- **Action**: Rolling restart of Deployment `prediction-api`\n- **Namespace**: `mlops-app`\n- **Purpose**: Cause the Pods to re-initialize and load the model registered under the `@candidate` alias.\n- **Status**: **Pending User Confirmation**\n\nPlease confirm if you would like to proceed with restarting the `prediction-api` deployment.\n\n> Pending your confirmation (not executed): `k8s_restart_deployment` {\"deployment\": \"prediction-api\", \"namespace\": \"mlops-app\"} - action `edefb1927528468c`",
+    "tool_calls": [
+      {
+        "tool": "k8s_restart_deployment",
+        "arguments": {
+          "deployment": "prediction-api",
+          "namespace": "mlops-app"
+        },
+        "status": "confirmation_required",
+        "duration_ms": 0.04,
+        "error": null,
+        "data": null,
+        "action_id": "edefb1927528468c"
+      }
+    ],
+    "pending_actions": [
+      {
+        "action_id": "edefb1927528468c",
+        "tool": "k8s_restart_deployment",
+        "arguments": {
+          "deployment": "prediction-api",
+          "namespace": "mlops-app"
+        },
+        "request_id": "ff3e67b97201",
+        "created_at": "2026-11-12T05:27:57.793067+00:00",
+        "expires_at": "2026-11-12T05:37:57.793067+00:00"
+      }
+    ],
+    "unavailable_sources": [],
+    "steps": 2,
+    "model": "gemini-3.5-flash",
+    "llm_fallbacks": [],
+    "duration_ms": 4437.9,
+    "error": null
+  }
+}

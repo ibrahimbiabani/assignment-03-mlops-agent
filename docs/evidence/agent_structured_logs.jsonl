@@ -1,0 +1,125 @@
+{"event": "llm_call", "request_id": "5db2892665c5", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 20725.9, "reason": null}
+{"event": "tool_call", "request_id": "5db2892665c5", "tool": "mlflow_get_model_versions", "status": "success", "duration_ms": 265.67}
+{"event": "tool_call", "request_id": "5db2892665c5", "tool": "dvc_get_dataset_version", "status": "success", "duration_ms": 62.62}
+{"event": "llm_call", "request_id": "5db2892665c5", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 7548.5, "reason": null}
+{"event": "tool_call", "request_id": "5db2892665c5", "tool": "mlflow_get_run", "status": "success", "duration_ms": 103.61}
+{"event": "llm_call", "request_id": "5db2892665c5", "model": "gemini-3.5-flash", "status": "unavailable", "duration_ms": 59758.4, "reason": "server error 504: Deadline expired before operation could complete."}
+{"event": "llm_model_cooldown", "model": "gemini-3.5-flash", "seconds": 60, "reason": "server error 504: Deadline expired before operation could complete."}
+{"event": "llm_call", "request_id": "5db2892665c5", "model": "gemini-3.6-flash", "status": "unavailable", "duration_ms": 1909.0, "reason": "server error 503: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."}
+{"event": "llm_model_cooldown", "model": "gemini-3.6-flash", "seconds": 60, "reason": "server error 503: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."}
+{"event": "llm_call", "request_id": "5db2892665c5", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1377.8, "reason": null}
+{"event": "tool_call", "request_id": "5db2892665c5", "tool": "dvc_get_reproduction_steps", "status": "success", "duration_ms": 66.67}
+{"event": "llm_call", "request_id": "5db2892665c5", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 2153.1, "reason": null}
+{"event": "agent_request", "request_id": "5db2892665c5", "model": "gemini-3.5-flash -> gemini-3.5-flash-lite", "llm_fallbacks": 2, "steps": 4, "tool_calls": 4, "unavailable": [], "pending_actions": 0, "duration_ms": 94707.8, "status": "ok"}
+{"event": "llm_call", "request_id": "768e456099dd", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1264.0, "reason": null}
+{"event": "tool_call", "request_id": "768e456099dd", "tool": "mlflow_list_runs", "status": "success", "duration_ms": 55.2}
+{"event": "llm_call", "request_id": "768e456099dd", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 998.6, "reason": null}
+{"event": "tool_call", "request_id": "768e456099dd", "tool": "mlflow_compare_runs", "status": "success", "duration_ms": 52.28}
+{"event": "llm_call", "request_id": "768e456099dd", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1165.4, "reason": null}
+{"event": "tool_call", "request_id": "768e456099dd", "tool": "dvc_list_tracked_datasets", "status": "success", "duration_ms": 1529.74}
+{"event": "llm_call", "request_id": "768e456099dd", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 847.0, "reason": null}
+{"event": "tool_call", "request_id": "768e456099dd", "tool": "k8s_get_deployed_version", "status": "success", "duration_ms": 37.45}
+{"event": "llm_call", "request_id": "768e456099dd", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 911.9, "reason": null}
+{"event": "tool_call", "request_id": "768e456099dd", "tool": "airflow_get_dag_runs", "status": "success", "duration_ms": 60.92}
+{"event": "llm_call", "request_id": "768e456099dd", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 927.1, "reason": null}
+{"event": "tool_call", "request_id": "768e456099dd", "tool": "policy_get_retraining_policy", "status": "success", "duration_ms": 1.16}
+{"event": "llm_call", "request_id": "768e456099dd", "model": "gemini-3.1-flash-lite", "status": "ok", "duration_ms": 1983.7, "reason": null}
+{"event": "agent_request", "request_id": "768e456099dd", "model": "gemini-3.5-flash-lite -> gemini-3.1-flash-lite", "llm_fallbacks": 0, "steps": 7, "tool_calls": 6, "unavailable": [], "pending_actions": 0, "duration_ms": 14710.9, "status": "ok"}
+{"event": "llm_call", "request_id": "b352882f4db6", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 3135.6, "reason": null}
+{"event": "tool_call", "request_id": "b352882f4db6", "tool": "mlflow_list_runs", "status": "success", "duration_ms": 76.75}
+{"event": "tool_call", "request_id": "b352882f4db6", "tool": "mlflow_find_best_run", "status": "success", "duration_ms": 79.48}
+{"event": "llm_call", "request_id": "b352882f4db6", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 4687.8, "reason": null}
+{"event": "tool_call", "request_id": "b352882f4db6", "tool": "mlflow_compare_runs", "status": "success", "duration_ms": 61.15}
+{"event": "llm_call", "request_id": "b352882f4db6", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 29460.3, "reason": null}
+{"event": "agent_request", "request_id": "b352882f4db6", "model": "gemini-3.5-flash", "llm_fallbacks": 0, "steps": 3, "tool_calls": 3, "unavailable": [], "pending_actions": 0, "duration_ms": 37546.5, "status": "ok"}
+{"event": "llm_call", "request_id": "fbea33ca94b2", "model": "gemini-3.5-flash", "status": "unavailable", "duration_ms": 59527.0, "reason": "server error 504: Deadline expired before operation could complete."}
+{"event": "llm_model_cooldown", "model": "gemini-3.5-flash", "seconds": 60, "reason": "server error 504: Deadline expired before operation could complete."}
+{"event": "llm_call", "request_id": "fbea33ca94b2", "model": "gemini-3.6-flash", "status": "unavailable", "duration_ms": 59339.1, "reason": "server error 504: Deadline expired before operation could complete."}
+{"event": "llm_model_cooldown", "model": "gemini-3.6-flash", "seconds": 60, "reason": "server error 504: Deadline expired before operation could complete."}
+{"event": "llm_call", "request_id": "fbea33ca94b2", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1825.6, "reason": null}
+{"event": "tool_call", "request_id": "fbea33ca94b2", "tool": "mlflow_find_best_run", "status": "success", "duration_ms": 86.66}
+{"event": "tool_call", "request_id": "fbea33ca94b2", "tool": "dvc_list_tracked_datasets", "status": "success", "duration_ms": 1557.35}
+{"event": "tool_call", "request_id": "fbea33ca94b2", "tool": "k8s_get_deployed_version", "status": "success", "duration_ms": 45.11}
+{"event": "tool_call", "request_id": "fbea33ca94b2", "tool": "airflow_get_dag_runs", "status": "success", "duration_ms": 46.25}
+{"event": "tool_call", "request_id": "fbea33ca94b2", "tool": "policy_get_retraining_policy", "status": "success", "duration_ms": 1.42}
+{"event": "llm_call", "request_id": "fbea33ca94b2", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 10909.7, "reason": null}
+{"event": "tool_call", "request_id": "fbea33ca94b2", "tool": "dvc_get_dataset_version", "status": "success", "duration_ms": 74.1}
+{"event": "tool_call", "request_id": "fbea33ca94b2", "tool": "mlflow_get_run", "status": "success", "duration_ms": 101.35}
+{"event": "llm_call", "request_id": "fbea33ca94b2", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 1730.6, "reason": null}
+{"event": "tool_call", "request_id": "fbea33ca94b2", "tool": "policy_check_retraining", "status": "success", "duration_ms": 1.01}
+{"event": "llm_call", "request_id": "fbea33ca94b2", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 4197.6, "reason": null}
+{"event": "agent_request", "request_id": "fbea33ca94b2", "model": "gemini-3.5-flash-lite -> gemini-3.5-flash", "llm_fallbacks": 2, "steps": 4, "tool_calls": 8, "unavailable": [], "pending_actions": 0, "duration_ms": 139785.0, "status": "ok"}
+{"event": "llm_call", "request_id": "ff3e67b97201", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 2540.3, "reason": null}
+{"event": "tool_call", "request_id": "ff3e67b97201", "tool": "k8s_restart_deployment", "status": "confirmation_required", "duration_ms": 0.04}
+{"event": "llm_call", "request_id": "ff3e67b97201", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 1873.6, "reason": null}
+{"event": "agent_request", "request_id": "ff3e67b97201", "model": "gemini-3.5-flash", "llm_fallbacks": 0, "steps": 2, "tool_calls": 1, "unavailable": [], "pending_actions": 1, "duration_ms": 4437.9, "status": "ok"}
+{"event": "tool_call", "request_id": "ff3e67b97201", "tool": "k8s_restart_deployment", "status": "success", "duration_ms": 31.98}
+{"event": "action_executed", "request_id": "ff3e67b97201", "action_id": "edefb1927528468c", "tool": "k8s_restart_deployment", "status": "success"}
+{"event": "llm_call", "request_id": "05f56be04728", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 3781.0, "reason": null}
+{"event": "tool_call", "request_id": "05f56be04728", "tool": "mlflow_find_best_run", "status": "success", "duration_ms": 68.74}
+{"event": "tool_call", "request_id": "05f56be04728", "tool": "mlflow_get_model_versions", "status": "success", "duration_ms": 152.21}
+{"event": "tool_call", "request_id": "05f56be04728", "tool": "dvc_list_tracked_datasets", "status": "success", "duration_ms": 1341.67}
+{"event": "tool_call", "request_id": "05f56be04728", "tool": "k8s_get_deployed_version", "status": "success", "duration_ms": 19.57}
+{"event": "tool_call", "request_id": "05f56be04728", "tool": "k8s_find_unhealthy", "status": "success", "duration_ms": 45.7}
+{"event": "tool_call", "request_id": "05f56be04728", "tool": "airflow_get_dag_runs", "status": "success", "duration_ms": 41.46}
+{"event": "llm_call", "request_id": "05f56be04728", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 2465.4, "reason": null}
+{"event": "tool_call", "request_id": "05f56be04728", "tool": "policy_get_retraining_policy", "status": "success", "duration_ms": 1.42}
+{"event": "tool_call", "request_id": "05f56be04728", "tool": "dvc_get_dataset_version", "status": "success", "duration_ms": 77.4}
+{"event": "llm_call", "request_id": "05f56be04728", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 2488.4, "reason": null}
+{"event": "tool_call", "request_id": "05f56be04728", "tool": "policy_check_retraining", "status": "success", "duration_ms": 1.58}
+{"event": "llm_call", "request_id": "05f56be04728", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 7978.2, "reason": null}
+{"event": "agent_request", "request_id": "05f56be04728", "model": "gemini-3.5-flash", "llm_fallbacks": 0, "steps": 4, "tool_calls": 9, "unavailable": [], "pending_actions": 0, "duration_ms": 18531.4, "status": "ok"}
+{"event": "llm_call", "request_id": "68badcb623c0", "model": "gemini-3.5-flash", "status": "ok", "duration_ms": 4118.7, "reason": null}
+{"event": "tool_call", "request_id": "68badcb623c0", "tool": "airflow_trigger_dag", "status": "confirmation_required", "duration_ms": 0.04}
+{"event": "llm_call", "request_id": "68badcb623c0", "model": "gemini-3.5-flash", "status": "unavailable", "duration_ms": 395.3, "reason": "daily free-tier quota (20/day) exhausted"}
+{"event": "llm_model_cooldown", "model": "gemini-3.5-flash", "seconds": 9062, "reason": "daily free-tier quota (20/day) exhausted"}
+{"event": "llm_call", "request_id": "68badcb623c0", "model": "gemini-3.6-flash", "status": "unavailable", "duration_ms": 393.1, "reason": "daily free-tier quota (20/day) exhausted"}
+{"event": "llm_model_cooldown", "model": "gemini-3.6-flash", "seconds": 9060, "reason": "daily free-tier quota (20/day) exhausted"}
+{"event": "llm_call", "request_id": "68badcb623c0", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1281.0, "reason": null}
+{"event": "agent_request", "request_id": "68badcb623c0", "model": "gemini-3.5-flash -> gemini-3.5-flash-lite", "llm_fallbacks": 2, "steps": 2, "tool_calls": 1, "unavailable": [], "pending_actions": 1, "duration_ms": 9431.9, "status": "ok"}
+{"event": "tool_call", "request_id": "68badcb623c0", "tool": "airflow_trigger_dag", "status": "success", "duration_ms": 180.41}
+{"event": "action_executed", "request_id": "68badcb623c0", "action_id": "9710fed27c30419c", "tool": "airflow_trigger_dag", "status": "success"}
+{"event": "llm_call", "request_id": "609a8505b8f4", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1550.8, "reason": null}
+{"event": "tool_call", "request_id": "609a8505b8f4", "tool": "airflow_get_dag_runs", "status": "success", "duration_ms": 37.98}
+{"event": "tool_call", "request_id": "609a8505b8f4", "tool": "mlflow_list_runs", "status": "success", "duration_ms": 235.83}
+{"event": "llm_call", "request_id": "609a8505b8f4", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1124.6, "reason": null}
+{"event": "tool_call", "request_id": "609a8505b8f4", "tool": "airflow_get_dag_run", "status": "success", "duration_ms": 50.29}
+{"event": "llm_call", "request_id": "609a8505b8f4", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 2572.7, "reason": null}
+{"event": "agent_request", "request_id": "609a8505b8f4", "model": "gemini-3.5-flash-lite", "llm_fallbacks": 0, "steps": 3, "tool_calls": 3, "unavailable": [], "pending_actions": 0, "duration_ms": 6592.0, "status": "ok"}
+{"event": "llm_call", "request_id": "ae907a364975", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1712.4, "reason": null}
+{"event": "tool_call", "request_id": "ae907a364975", "tool": "k8s_list_workloads", "status": "success", "duration_ms": 31.66}
+{"event": "tool_call", "request_id": "ae907a364975", "tool": "k8s_find_unhealthy", "status": "success", "duration_ms": 56.45}
+{"event": "tool_call", "request_id": "ae907a364975", "tool": "k8s_list_services", "status": "success", "duration_ms": 33.37}
+{"event": "llm_call", "request_id": "ae907a364975", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 918.3, "reason": null}
+{"event": "tool_call", "request_id": "ae907a364975", "tool": "k8s_get_pod_logs", "status": "success", "duration_ms": 116.12}
+{"event": "llm_call", "request_id": "ae907a364975", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 2269.9, "reason": null}
+{"event": "agent_request", "request_id": "ae907a364975", "model": "gemini-3.5-flash-lite", "llm_fallbacks": 0, "steps": 3, "tool_calls": 4, "unavailable": [], "pending_actions": 0, "duration_ms": 6289.4, "status": "ok"}
+{"event": "llm_call", "request_id": "dea8c25ce735", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1779.0, "reason": null}
+{"event": "tool_call", "request_id": "dea8c25ce735", "tool": "k8s_restart_deployment", "status": "confirmation_required", "duration_ms": 0.03}
+{"event": "llm_call", "request_id": "dea8c25ce735", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1288.7, "reason": null}
+{"event": "agent_request", "request_id": "dea8c25ce735", "model": "gemini-3.5-flash-lite", "llm_fallbacks": 0, "steps": 2, "tool_calls": 1, "unavailable": [], "pending_actions": 1, "duration_ms": 3309.0, "status": "ok"}
+{"event": "tool_call", "request_id": "dea8c25ce735", "tool": "k8s_restart_deployment", "status": "success", "duration_ms": 24.78}
+{"event": "action_executed", "request_id": "dea8c25ce735", "action_id": "f625254f7880426c", "tool": "k8s_restart_deployment", "status": "success"}
+{"event": "llm_call", "request_id": "f28c18188c1a", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1313.7, "reason": null}
+{"event": "tool_call", "request_id": "f28c18188c1a", "tool": "k8s_list_workloads", "status": "success", "duration_ms": 21.8}
+{"event": "tool_call", "request_id": "f28c18188c1a", "tool": "k8s_get_pod_status", "status": "invalid_request", "duration_ms": 13.08}
+{"event": "tool_call", "request_id": "f28c18188c1a", "tool": "k8s_get_pod_logs", "status": "invalid_request", "duration_ms": 13.81}
+{"event": "tool_call", "request_id": "f28c18188c1a", "tool": "k8s_get_deployed_version", "status": "success", "duration_ms": 37.51}
+{"event": "llm_call", "request_id": "f28c18188c1a", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1304.0, "reason": null}
+{"event": "tool_call", "request_id": "f28c18188c1a", "tool": "k8s_get_pod_logs", "status": "success", "duration_ms": 47.08}
+{"event": "llm_call", "request_id": "f28c18188c1a", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1467.8, "reason": null}
+{"event": "agent_request", "request_id": "f28c18188c1a", "model": "gemini-3.5-flash-lite", "llm_fallbacks": 0, "steps": 3, "tool_calls": 5, "unavailable": [], "pending_actions": 0, "duration_ms": 5486.5, "status": "ok"}
+{"event": "llm_call", "request_id": "beea6dbf2154", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1552.7, "reason": null}
+{"event": "tool_call", "request_id": "beea6dbf2154", "tool": "mlflow_find_best_run", "status": "error", "duration_ms": 16436.46}
+{"event": "llm_call", "request_id": "beea6dbf2154", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1884.5, "reason": null}
+{"event": "tool_call", "request_id": "beea6dbf2154", "tool": "mlflow_list_experiments", "status": "error", "duration_ms": 16727.13}
+{"event": "llm_call", "request_id": "beea6dbf2154", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1643.0, "reason": null}
+{"event": "agent_request", "request_id": "beea6dbf2154", "model": "gemini-3.5-flash-lite", "llm_fallbacks": 0, "steps": 3, "tool_calls": 2, "unavailable": ["mlflow_find_best_run", "mlflow_list_experiments"], "pending_actions": 0, "duration_ms": 38281.9, "status": "ok"}
+{"event": "llm_call", "request_id": "fb296deed3c7", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1276.1, "reason": null}
+{"event": "tool_call", "request_id": "fb296deed3c7", "tool": "mlflow_find_best_run", "status": "success", "duration_ms": 441.15}
+{"event": "llm_call", "request_id": "fb296deed3c7", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 1376.7, "reason": null}
+{"event": "agent_request", "request_id": "fb296deed3c7", "model": "gemini-3.5-flash-lite", "llm_fallbacks": 0, "steps": 2, "tool_calls": 1, "unavailable": [], "pending_actions": 0, "duration_ms": 3413.9, "status": "ok"}
+{"event": "llm_call", "request_id": "5f9a31ffb61b", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 2547.3, "reason": null}
+{"event": "tool_call", "request_id": "5f9a31ffb61b", "tool": "k8s_scale_deployment", "status": "rejected", "duration_ms": 0.03}
+{"event": "llm_call", "request_id": "5f9a31ffb61b", "model": "gemini-3.5-flash-lite", "status": "ok", "duration_ms": 928.4, "reason": null}
+{"event": "agent_request", "request_id": "5f9a31ffb61b", "model": "gemini-3.5-flash-lite", "llm_fallbacks": 0, "steps": 2, "tool_calls": 1, "unavailable": [], "pending_actions": 0, "duration_ms": 3502.0, "status": "ok"}

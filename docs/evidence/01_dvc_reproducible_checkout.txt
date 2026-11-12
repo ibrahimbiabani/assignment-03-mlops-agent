@@ -1,0 +1,115 @@
+# Part A: fresh clone, data restored only from the DVC remote (empty local cache)
+
+$ git clone <this repository> <temporary folder>
+
+$ git log --oneline -3
+a01c0d7 Pin LF line endings for portable DVC hashes, persist Airflow task logs, sharpen agent caveats and prompt rules
+cef1bf0 Dataset v2: full 569-row dataset with DVC pipeline and metrics
+cc84095 Add MLflow logged models to get_run, universal lockfile, DVC pipeline stages and configurable Airflow port
+
+$ git tag -l
+data-v1.0
+data-v2.0
+
+$ dvc remote modify --local localremote url <absolute path of ../dvc-remote>
+
+$ dvc list . data/raw --dvc-only
+breast_cancer.csv
+
+## Restore data-v1.0
+
+$ git checkout --quiet data-v1.0
+
+$ git rev-parse --short HEAD
+e63dabf
+
+$ dvc pull
+A       data\raw\breast_cancer.csv
+1 file fetched and 1 file added
+
+$ (rows and md5 of data/raw/breast_cancer.csv)
+rows: 400
+dd00f1dcdb4353dacae800869da547c5 *data/raw/breast_cancer.csv
+md5 recorded in .dvc: dd00f1dcdb4353dacae800869da547c5
+
+$ dvc status
+Data and pipelines are up to date.
+
+## Back to the current version (main; dataset data-v2.0)
+
+$ git checkout --quiet main
+
+$ git rev-parse --short HEAD
+a01c0d7
+
+$ git describe --tags --abbrev=0 HEAD
+data-v2.0
+
+$ dvc pull
+M       data\raw\breast_cancer.csv
+A       data\processed\
+A       models\model.joblib
+5 files fetched, 1 file modified and 3 files added
+
+$ (rows and md5 of data/raw/breast_cancer.csv)
+rows: 569
+b154f6a78a166306105a372ea2344899 *data/raw/breast_cancer.csv
+md5 recorded in .dvc: b154f6a78a166306105a372ea2344899
+
+$ dvc status
+Data and pipelines are up to date.
+
+## What changed between the versions
+
+$ dvc diff data-v1.0 data-v2.0
+Added:
+    data\processed\
+    data\processed\test.csv
+    data\processed\train.csv
+    models\model.joblib
+
+Modified:
+    data\raw\breast_cancer.csv
+
+files summary: 3 added, 1 modified
+
+$ git log --oneline data-v1.0..data-v2.0 -- data/raw/breast_cancer.csv.dvc
+cef1bf0 Dataset v2: full 569-row dataset with DVC pipeline and metrics
+
+# Part B: in the working repository (local cache), restore v1 and return
+
+$ git checkout data-v1.0 -- data/raw/breast_cancer.csv.dvc
+
+$ dvc checkout data/raw/breast_cancer.csv.dvc
+M       data\raw\breast_cancer.csv
+
+$ (rows and md5 of data/raw/breast_cancer.csv)
+rows: 400
+dd00f1dcdb4353dacae800869da547c5 *data/raw/breast_cancer.csv
+md5 recorded in .dvc: dd00f1dcdb4353dacae800869da547c5
+
+$ git checkout HEAD -- data/raw/breast_cancer.csv.dvc
+
+$ dvc checkout data/raw/breast_cancer.csv.dvc
+M       data\raw\breast_cancer.csv
+
+$ (rows and md5 of data/raw/breast_cancer.csv)
+rows: 569
+b154f6a78a166306105a372ea2344899 *data/raw/breast_cancer.csv
+md5 recorded in .dvc: b154f6a78a166306105a372ea2344899
+
+$ dvc status
+Data and pipelines are up to date.
+
+# Part C: the DVC pipeline is reproducible (nothing to rerun on unchanged inputs)
+
+$ dvc repro
+'data\raw\breast_cancer.csv.dvc' didn't change, skipping
+Stage 'preprocess' didn't change, skipping
+Stage 'train' didn't change, skipping
+Stage 'evaluate' didn't change, skipping
+Data and pipelines are up to date.
+
+$ dvc metrics show
+Path          accuracy    f1      precision    recall    roc_auc
+metrics.json  0.9825      0.9861  0.9861       0.9861    0.9954

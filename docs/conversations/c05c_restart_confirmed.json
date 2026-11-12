@@ -1,0 +1,46 @@
+{
+  "endpoint": "POST /actions/f625254f7880426c/confirm",
+  "http_status": 200,
+  "response": {
+    "action_id": "f625254f7880426c",
+    "status": "executed",
+    "result": {
+      "tool": "k8s_restart_deployment",
+      "status": "success",
+      "data": {
+        "namespace": "mlops-app",
+        "deployment": "prediction-api",
+        "restarted_at": "2026-11-12T05:31:31.641328+00:00",
+        "status": {
+          "name": "prediction-api",
+          "version": "1.0.0",
+          "revision": "7",
+          "images": [
+            "prediction-api:1.0.0"
+          ],
+          "replicas_desired": 2,
+          "replicas_ready": 0,
+          "replicas_available": 0,
+          "replicas_updated": 2,
+          "conditions": [
+            {
+              "type": "Progressing",
+              "status": "True",
+              "reason": "NewReplicaSetAvailable",
+              "message": "ReplicaSet \"prediction-api-7d5ff5c4bc\" has successfully progressed."
+            },
+            {
+              "type": "Available",
+              "status": "False",
+              "reason": "MinimumReplicasUnavailable",
+              "message": "Deployment does not have minimum availability."
+            }
+          ]
+        }
+      },
+      "error": null,
+      "duration_ms": 24.78
+    },
+    "detail": null
+  }
+}

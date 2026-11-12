@@ -1,0 +1,135 @@
+{
+  "exported_at": "2026-11-12T05:34:02+00:00",
+  "calls": [
+    {
+      "tool": "dvc_list_tracked_datasets",
+      "arguments": {},
+      "status": "success",
+      "data": {
+        "datasets": [
+          {
+            "path": "data/raw/breast_cancer.csv",
+            "dvc_file": "data/raw/breast_cancer.csv.dvc",
+            "md5": "b154f6a78a166306105a372ea2344899",
+            "size": 121385,
+            "nfiles": null
+          }
+        ],
+        "count": 1
+      },
+      "error": null,
+      "duration_ms": 1658.24
+    },
+    {
+      "tool": "dvc_get_dataset_version",
+      "arguments": {
+        "path": "data/raw/breast_cancer.csv"
+      },
+      "status": "success",
+      "data": {
+        "dvc_file": "data/raw/breast_cancer.csv.dvc",
+        "outs": [
+          {
+            "path": "data/raw/breast_cancer.csv",
+            "dvc_file": "data/raw/breast_cancer.csv.dvc",
+            "md5": "b154f6a78a166306105a372ea2344899",
+            "size": 121385,
+            "nfiles": null
+          }
+        ],
+        "commit": {
+          "sha": "cef1bf0acf38bf19b075905b427b9bbdd9ed0085",
+          "short_sha": "cef1bf0",
+          "date": "2026-11-12T10:12:24+05:00",
+          "message": "Dataset v2: full 569-row dataset with DVC pipeline and metrics",
+          "tags": [
+            "data-v2.0"
+          ]
+        }
+      },
+      "error": null,
+      "duration_ms": 68.44
+    },
+    {
+      "tool": "dvc_check_data_changes",
+      "arguments": {},
+      "status": "success",
+      "data": {
+        "up_to_date": true,
+        "changes": {}
+      },
+      "error": null,
+      "duration_ms": 1696.58
+    },
+    {
+      "tool": "dvc_compare_dataset_versions",
+      "arguments": {
+        "rev_a": "data-v1.0",
+        "rev_b": "data-v2.0"
+      },
+      "status": "success",
+      "data": {
+        "rev_a": "data-v1.0",
+        "rev_b": "data-v2.0",
+        "summary": {
+          "added": 4,
+          "deleted": 0,
+          "modified": 1,
+          "renamed": 0
+        },
+        "diff": {
+          "added": [
+            {
+              "path": "data\\processed\\"
+            },
+            {
+              "path": "data\\processed\\test.csv"
+            },
+            {
+              "path": "data\\processed\\train.csv"
+            },
+            {
+              "path": "models\\model.joblib"
+            }
+          ],
+          "deleted": [],
+          "modified": [
+            {
+              "path": "data\\raw\\breast_cancer.csv"
+            }
+          ],
+          "renamed": []
+        }
+      },
+      "error": null,
+      "duration_ms": 1709.01
+    },
+    {
+      "tool": "dvc_get_reproduction_steps",
+      "arguments": {
+        "path": "data/raw/breast_cancer.csv",
+        "rev": "data-v1.0"
+      },
+      "status": "success",
+      "data": {
+        "dvc_file": "data/raw/breast_cancer.csv.dvc",
+        "commit": "e63dabfc392177bfebcdd8630111699912293ceb",
+        "outs": [
+          {
+            "path": "data/raw/breast_cancer.csv",
+            "dvc_file": "data/raw/breast_cancer.csv.dvc",
+            "md5": "dd00f1dcdb4353dacae800869da547c5",
+            "size": 85486,
+            "nfiles": null
+          }
+        ],
+        "steps": [
+          "git checkout e63dabfc392177bfebcdd8630111699912293ceb -- data/raw/breast_cancer.csv.dvc",
+          "dvc pull data/raw/breast_cancer.csv.dvc  # fetches from the remote and checks out the data"
+        ]
+      },
+      "error": null,
+      "duration_ms": 54.33
+    }
+  ]
+}

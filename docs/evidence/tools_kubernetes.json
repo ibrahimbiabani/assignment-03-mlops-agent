@@ -1,0 +1,439 @@
+{
+  "exported_at": "2026-11-12T05:34:04+00:00",
+  "calls": [
+    {
+      "tool": "k8s_list_workloads",
+      "arguments": {},
+      "status": "success",
+      "data": {
+        "namespace": "mlops-app",
+        "deployments": [
+          {
+            "name": "prediction-api",
+            "version": "1.0.0",
+            "revision": "8",
+            "images": [
+              "prediction-api:1.0.0"
+            ],
+            "replicas_desired": 2,
+            "replicas_ready": 2,
+            "replicas_available": 2,
+            "replicas_updated": 2,
+            "conditions": [
+              {
+                "type": "Available",
+                "status": "True",
+                "reason": "MinimumReplicasAvailable",
+                "message": "Deployment has minimum availability."
+              },
+              {
+                "type": "Progressing",
+                "status": "True",
+                "reason": "NewReplicaSetAvailable",
+                "message": "ReplicaSet \"prediction-api-6cd8575947\" has successfully progressed."
+              }
+            ]
+          }
+        ],
+        "pods": [
+          {
+            "name": "prediction-api-6cd8575947-n222s",
+            "phase": "Running",
+            "ready": true,
+            "restarts": 0,
+            "node": "docker-desktop",
+            "started": "2026-11-12T05:31:31+00:00",
+            "version": "1.0.0",
+            "containers": [
+              {
+                "name": "prediction-api",
+                "image": "prediction-api:1.0.0",
+                "ready": true,
+                "restart_count": 0,
+                "state": {
+                  "running": {
+                    "started_at": "2026-11-12T05:31:32+00:00"
+                  }
+                },
+                "last_state": null
+              }
+            ]
+          },
+          {
+            "name": "prediction-api-6cd8575947-ngtxw",
+            "phase": "Running",
+            "ready": true,
+            "restarts": 0,
+            "node": "docker-desktop",
+            "started": "2026-11-12T05:31:38+00:00",
+            "version": "1.0.0",
+            "containers": [
+              {
+                "name": "prediction-api",
+                "image": "prediction-api:1.0.0",
+                "ready": true,
+                "restart_count": 0,
+                "state": {
+                  "running": {
+                    "started_at": "2026-11-12T05:31:39+00:00"
+                  }
+                },
+                "last_state": null
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "duration_ms": 56.83
+    },
+    {
+      "tool": "k8s_list_services",
+      "arguments": {},
+      "status": "success",
+      "data": {
+        "namespace": "mlops-app",
+        "services": [
+          {
+            "name": "prediction-api",
+            "type": "ClusterIP",
+            "cluster_ip": "10.110.176.55",
+            "ports": [
+              {
+                "name": "http",
+                "port": 80,
+                "target_port": "http"
+              }
+            ],
+            "selector": {
+              "app.kubernetes.io/name": "prediction-api"
+            },
+            "ready_endpoints": 2,
+            "not_ready_endpoints": 0
+          }
+        ]
+      },
+      "error": null,
+      "duration_ms": 41.83
+    },
+    {
+      "tool": "k8s_find_unhealthy",
+      "arguments": {},
+      "status": "success",
+      "data": {
+        "namespace": "mlops-app",
+        "healthy": true,
+        "unhealthy_pods": [],
+        "restarted_pods": [],
+        "under_replicated_deployments": [],
+        "warning_events": [
+          {
+            "type": "Warning",
+            "reason": "Unhealthy",
+            "object": "Pod/prediction-api-7d5ff5c4bc-bxntz",
+            "message": "Readiness probe failed: HTTP probe failed with statuscode: 503",
+            "count": 18,
+            "last_seen": "2026-11-12T05:31:44+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Unhealthy",
+            "object": "Pod/prediction-api-7d5ff5c4bc-h8x2f",
+            "message": "Readiness probe failed: HTTP probe failed with statuscode: 503",
+            "count": 16,
+            "last_seen": "2026-11-12T05:31:38+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Unhealthy",
+            "object": "Pod/prediction-api-dd5c5545-jzkdh",
+            "message": "Readiness probe failed: Get \"http://10.1.0.34:8000/health/ready\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)",
+            "count": 1,
+            "last_seen": "2026-11-12T05:28:23+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Unhealthy",
+            "object": "Pod/prediction-api-dd5c5545-rjr7n",
+            "message": "Readiness probe failed: Get \"http://10.1.0.35:8000/health/ready\": dial tcp 10.1.0.35:8000: connect: connection refused",
+            "count": 1,
+            "last_seen": "2026-11-12T05:28:16+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Unhealthy",
+            "object": "Pod/prediction-api-dd5c5545-jzkdh",
+            "message": "Readiness probe failed: HTTP probe failed with statuscode: 503",
+            "count": 6,
+            "last_seen": "2026-11-12T04:59:31+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Unhealthy",
+            "object": "Pod/prediction-api-dd5c5545-rjr7n",
+            "message": "Readiness probe failed: HTTP probe failed with statuscode: 503",
+            "count": 6,
+            "last_seen": "2026-11-12T04:59:31+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Unhealthy",
+            "object": "Pod/prediction-api-dd5c5545-jzkdh",
+            "message": "Readiness probe failed: HTTP probe failed with statuscode: 503",
+            "count": 5,
+            "last_seen": "2026-11-11T06:59:14+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Unhealthy",
+            "object": "Pod/prediction-api-dd5c5545-rjr7n",
+            "message": "Readiness probe failed: HTTP probe failed with statuscode: 503",
+            "count": 5,
+            "last_seen": "2026-11-11T06:59:14+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Unhealthy",
+            "object": "Pod/prediction-api-64794b866b-s6bvn",
+            "message": "Readiness probe failed: Get \"http://10.1.0.21:8000/health/ready\": dial tcp 10.1.0.21:8000: connect: connection refused",
+            "count": 1,
+            "last_seen": "2026-11-11T06:40:09+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Unhealthy",
+            "object": "Pod/prediction-api-64794b866b-fwfbf",
+            "message": "Readiness probe failed: Get \"http://10.1.0.20:8000/health/ready\": dial tcp 10.1.0.20:8000: connect: connection refused",
+            "count": 1,
+            "last_seen": "2026-11-11T06:40:03+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Unhealthy",
+            "object": "Pod/prediction-api-64794b866b-s6bvn",
+            "message": "Readiness probe failed: HTTP probe failed with statuscode: 503",
+            "count": 7,
+            "last_seen": "2026-11-11T06:23:09+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Unhealthy",
+            "object": "Pod/prediction-api-64794b866b-fwfbf",
+            "message": "Readiness probe failed: HTTP probe failed with statuscode: 503",
+            "count": 6,
+            "last_seen": "2026-11-11T06:23:08+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Failed",
+            "object": "Pod/prediction-api-6fcb747955-9gpkx",
+            "message": "Failed to pull image \"prediction-api:9.9.9\": Error response from daemon: pull access denied for prediction-api, repository does not exist or may require 'docker login'",
+            "count": 1,
+            "last_seen": "2026-11-10T11:31:16+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Failed",
+            "object": "Pod/prediction-api-6fcb747955-9gpkx",
+            "message": "Error: ErrImagePull",
+            "count": 1,
+            "last_seen": "2026-11-10T11:31:16+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Failed",
+            "object": "Pod/prediction-api-6fcb747955-9gpkx",
+            "message": "Error: ImagePullBackOff",
+            "count": 1,
+            "last_seen": "2026-11-10T11:31:16+00:00"
+          },
+          {
+            "type": "Warning",
+            "reason": "Unhealthy",
+            "object": "Pod/prediction-api-84c4d6bfd7-kgbz2",
+            "message": "Readiness probe failed: Get \"http://10.1.0.12:8000/health/ready\": dial tcp 10.1.0.12:8000: connect: connection refused",
+            "count": 1,
+            "last_seen": "2026-11-10T11:31:05+00:00"
+          }
+        ]
+      },
+      "error": null,
+      "duration_ms": 56.38
+    },
+    {
+      "tool": "k8s_get_deployed_version",
+      "arguments": {
+        "deployment": "prediction-api"
+      },
+      "status": "success",
+      "data": {
+        "deployment": {
+          "name": "prediction-api",
+          "version": "1.0.0",
+          "revision": "8",
+          "images": [
+            "prediction-api:1.0.0"
+          ],
+          "replicas_desired": 2,
+          "replicas_ready": 2,
+          "replicas_available": 2,
+          "replicas_updated": 2,
+          "conditions": [
+            {
+              "type": "Available",
+              "status": "True",
+              "reason": "MinimumReplicasAvailable",
+              "message": "Deployment has minimum availability."
+            },
+            {
+              "type": "Progressing",
+              "status": "True",
+              "reason": "NewReplicaSetAvailable",
+              "message": "ReplicaSet \"prediction-api-6cd8575947\" has successfully progressed."
+            }
+          ]
+        },
+        "app_reported": {
+          "app_version": "1.0.0",
+          "model": {
+            "name": "breast-cancer-classifier",
+            "alias": "candidate",
+            "version": "3",
+            "run_id": "4b27eb8bc31d4e51924d82043815fd1b"
+          },
+          "model_loaded": true,
+          "last_error": null
+        }
+      },
+      "error": null,
+      "duration_ms": 31.52
+    },
+    {
+      "tool": "k8s_get_pod_status",
+      "arguments": {
+        "pod_name": "prediction-api-6cd8575947-n222s"
+      },
+      "status": "success",
+      "data": {
+        "name": "prediction-api-6cd8575947-n222s",
+        "phase": "Running",
+        "ready": true,
+        "restarts": 0,
+        "node": "docker-desktop",
+        "started": "2026-11-12T05:31:31+00:00",
+        "version": "1.0.0",
+        "containers": [
+          {
+            "name": "prediction-api",
+            "image": "prediction-api:1.0.0",
+            "ready": true,
+            "restart_count": 0,
+            "state": {
+              "running": {
+                "started_at": "2026-11-12T05:31:32+00:00"
+              }
+            },
+            "last_state": null
+          }
+        ],
+        "conditions": {
+          "PodReadyToStartContainers": "True",
+          "Initialized": "True",
+          "Ready": "True",
+          "ContainersReady": "True",
+          "PodScheduled": "True"
+        },
+        "probes": {
+          "prediction-api": {
+            "readiness": {
+              "path": "/health/ready",
+              "port": "http",
+              "period_s": 5,
+              "failure_threshold": 3
+            },
+            "liveness": {
+              "path": "/health/live",
+              "port": "http",
+              "period_s": 10,
+              "failure_threshold": 3
+            }
+          }
+        },
+        "events": [
+          {
+            "type": "Normal",
+            "reason": "Pulled",
+            "object": "Pod/prediction-api-6cd8575947-n222s",
+            "message": "Container image \"prediction-api:1.0.0\" already present on machine and can be accessed by the pod",
+            "count": 1,
+            "last_seen": "2026-11-12T05:31:32+00:00"
+          },
+          {
+            "type": "Normal",
+            "reason": "Created",
+            "object": "Pod/prediction-api-6cd8575947-n222s",
+            "message": "Container created",
+            "count": 1,
+            "last_seen": "2026-11-12T05:31:32+00:00"
+          },
+          {
+            "type": "Normal",
+            "reason": "Started",
+            "object": "Pod/prediction-api-6cd8575947-n222s",
+            "message": "Container started",
+            "count": 1,
+            "last_seen": "2026-11-12T05:31:32+00:00"
+          },
+          {
+            "type": "Normal",
+            "reason": "Scheduled",
+            "object": "Pod/prediction-api-6cd8575947-n222s",
+            "message": "Successfully assigned mlops-app/prediction-api-6cd8575947-n222s to docker-desktop",
+            "count": 1,
+            "last_seen": "2026-11-12T05:31:31+00:00"
+          }
+        ]
+      },
+      "error": null,
+      "duration_ms": 28.07
+    },
+    {
+      "tool": "k8s_get_pod_logs",
+      "arguments": {
+        "pod_name": "prediction-api-6cd8575947-n222s",
+        "tail_lines": 20
+      },
+      "status": "success",
+      "data": {
+        "pod": "prediction-api-6cd8575947-n222s",
+        "namespace": "mlops-app",
+        "previous": false,
+        "lines": [
+          "INFO:     10.1.0.1:56500 - \"GET /health/live HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:56514 - \"GET /health/ready HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:56528 - \"GET /health/ready HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:46918 - \"GET /health/live HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:46922 - \"GET /health/ready HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:46924 - \"GET /health/ready HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:56828 - \"GET /health/live HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:56832 - \"GET /health/ready HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:56844 - \"GET /health/ready HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:42404 - \"GET /health/live HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:42420 - \"GET /health/ready HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:42430 - \"GET /health/ready HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:38396 - \"GET /health/live HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:38402 - \"GET /health/ready HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:38418 - \"GET /health/ready HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:52102 - \"GET /health/live HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:52104 - \"GET /health/ready HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:52306 - \"GET /health/ready HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:52306 - \"GET /health/live HTTP/1.1\" 200 OK",
+          "INFO:     10.1.0.1:52308 - \"GET /health/ready HTTP/1.1\" 200 OK"
+        ],
+        "error_lines": []
+      },
+      "error": null,
+      "duration_ms": 50.91
+    }
+  ]
+}
