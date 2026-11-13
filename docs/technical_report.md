@@ -282,8 +282,9 @@ These were not injected. Each was diagnosed from evidence and fixed in the repos
 
 ## 6. Testing, reliability and safety
 
-`pytest` runs 190 test cases (137 test functions; 189 pass, plus 1 DAG test that needs the
-Airflow container). GitHub Actions runs `ruff check`, `ruff format --check` and `pytest` on
+`pytest` runs 194 test cases (140 test functions; 193 pass, plus 1 DAG test that needs the
+Airflow container). The DVC tools (`agent/tools/dvc_tools.py`) and the shared tool wrapper
+(`agent/tools/base.py`) have 100% line and branch coverage (`pytest --cov`). GitHub Actions runs `ruff check`, `ruff format --check` and `pytest` on
 Python 3.11 and 3.14 for pushes and pull requests, installing from `requirements.lock`. No
 external service is contacted in CI. DVC subprocesses are mocked, MLflow uses a temporary
 SQLite store, Airflow is an in-process fake HTTP API, Kubernetes uses fake API objects built
@@ -291,7 +292,7 @@ from the real client models, and the LLM is a scripted fake.
 
 | Requirement (Section 6) | Tests (examples) |
 |---|---|
-| ≥ 8 meaningful tests | 190 cases across 13 files |
+| ≥ 8 meaningful tests | 194 cases across 13 files |
 | Mocked responses for unavailable services | `test_http_timeout_returns_timeout_status` (MLflow), `test_timeout_returns_timeout_status` (Airflow), `test_dvc_not_installed_returns_error_not_invented_data` |
 | Successful tool selection and execution | `test_executes_selected_tools_and_returns_evidence`, `test_real_registry_covers_all_four_technologies_and_hides_confirm` |
 | Timeouts, invalid requests, service failures | `test_timeout_returns_timeout_status_without_data`, `test_invalid_tool_calls_are_refused_without_running`, `test_invalid_requests_are_rejected`, `test_invalid_arguments_rejected_before_any_http_call` |

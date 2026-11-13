@@ -91,6 +91,46 @@ def test_get_dataset_version_returns_hash_commit_and_tags(repo, fake_run):
     assert result.data["commit"]["tags"] == ["data-v2.1"]
 
 
+@pytest.mark.parametrize(
+    ("path", "message"),
+    [("", "dataset path is required"), ("data/unknown.csv", "no DVC tracking file found")],
+)
+def test_missing_or_untracked_dataset_is_invalid_request(repo, fake_run, path, message):
+    _, calls = fake_run
+
+    result = dvc_tools.get_dataset_version(path)
+
+    assert result.status == ToolStatus.INVALID_REQUEST
+    assert message in result.error
+    assert result.data is None
+    assert calls == []  # rejected before any git command
+
+
+def test_uncommitted_dvc_file_reports_no_commit(repo, fake_run):
+    """A .dvc file that exists but was never committed has no Git provenance yet."""
+    responses, calls = fake_run
+    responses[("git", "log")] = ""
+
+    result = dvc_tools.get_dataset_version("data/iris.csv")
+
+    assert result.ok
+    assert result.data["commit"] is None
+    assert result.data["outs"][0]["md5"] == "3f2a9c1e0b7d4e5f6a7b8c9d0e1f2a3b"
+    assert [c[:2] for c in calls] == [["git", "log"]]  # no tag lookup without a commit
+
+
+def test_unexpected_tool_exception_becomes_error_result(repo, fake_run):
+    """Malformed git output raises inside the tool; the agent gets an error, not a crash."""
+    responses, _ = fake_run
+    responses[("git", "log")] = "not-the-expected-format\n"
+
+    result = dvc_tools.get_dataset_version("data/iris.csv")
+
+    assert result.status == ToolStatus.ERROR
+    assert result.error.startswith("ValueError:")
+    assert result.data is None
+
+
 def test_check_data_changes_clean_and_modified(repo, fake_run):
     responses, _ = fake_run
     responses[("dvc", "status")] = "{}"
