@@ -179,5 +179,5 @@ config/           Retraining policy
 docker/airflow/   Airflow image (adds mlflow-skinny under Airflow constraints)
 scripts/          Evidence export and transcript rendering
 docs/             Technical report, exported evidence, agent conversations
-tests/            190 pytest cases; external systems mocked or faked
+tests/            194 pytest cases; external systems mocked or faked
 ```

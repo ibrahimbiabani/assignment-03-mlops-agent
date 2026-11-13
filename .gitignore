@@ -9,3 +9,5 @@ mlruns/
 mlflow.db
 .claude/
 artifacts/
+.coverage
+htmlcov/
